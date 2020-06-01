@@ -40,5 +40,3 @@ This is the data cleaning of new room raw data with deta​​il capacity inform
 ### assignment\_opt.py
 
 Room assignment optimization model.
-
-# Scheduling-Optimization
