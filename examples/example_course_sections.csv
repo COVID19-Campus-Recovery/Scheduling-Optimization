@@ -1,0 +1,23 @@
+Subject Code,Course Number,Course Section,Enrollment,Days,Begin Time,End Time,Building Number,Room,Exclusively Online,Room Use,keep assigned room,Raw Preference,Preference
+BIOS,2500,A,35,TR,1230,1345,850,1253,0,Class,0,Hybrid,"hybrid_split, hybrid_touchpoint,residential_spread"
+VIP,2601,VVX,46,W,1830,1920,850,1253,0,Class,0,Hybrid,"hybrid_split, hybrid_touchpoint,residential_spread"
+VIP,2601,VVY,46,R,1830,1920,850,1253,0,Class,0,Hybrid,"hybrid_split, hybrid_touchpoint,residential_spread"
+KOR,2001,A,22,MWF,1400,1450,173,235,0,Class,0,Hybrid,"hybrid_split, hybrid_touchpoint,residential_spread"
+ACCT,2102,A,53,MWF,1230,1320,172,101,0,Class,0,Hybrid,"hybrid_split, hybrid_touchpoint,residential_spread"
+MGT,4803,F,30,MWF,1230,1320,173,235,0,Class,0,Hybrid,"hybrid_split, hybrid_touchpoint,residential_spread"
+MGT,6507,A,12,M,1700,1815,173,235,0,Class,0,Hybrid,"hybrid_split, hybrid_touchpoint,residential_spread"
+MGT,6507,A,12,M,1530,1645,173,235,0,Class,0,Hybrid,"hybrid_split, hybrid_touchpoint,residential_spread"
+MGT,6507,C,12,W,1530,1645,173,235,0,Class,0,Hybrid,"hybrid_split, hybrid_touchpoint,residential_spread"
+MGT,6507,C,12,W,1700,1815,173,235,0,Class,0,Hybrid,"hybrid_split, hybrid_touchpoint,residential_spread"
+MGT,6507,E,12,M,1700,1815,173,235,0,Class,0,Hybrid,"hybrid_split, hybrid_touchpoint,residential_spread"
+MGT,6507,E,12,M,1530,1645,173,235,0,Class,0,Hybrid,"hybrid_split, hybrid_touchpoint,residential_spread"
+MGT,6507,F,12,T,1530,1645,173,235,0,Class,0,Hybrid,"hybrid_split, hybrid_touchpoint,residential_spread"
+MGT,6507,F,12,T,1700,1815,173,235,0,Class,0,Hybrid,"hybrid_split, hybrid_touchpoint,residential_spread"
+MGT,6507,G,12,W,1530,1645,173,235,0,Class,0,Hybrid,"hybrid_split, hybrid_touchpoint,residential_spread"
+MGT,6507,G,12,W,1700,1815,173,235,0,Class,0,Hybrid,"hybrid_split, hybrid_touchpoint,residential_spread"
+INTA,4803,DM,30,MW,1100,1215,137,G17,0,Class,0,Hybrid,"hybrid_split, hybrid_touchpoint,residential_spread"
+INTA,3042,A,30,W,1700,1945,137,G17,0,Class,0,Hybrid,"hybrid_split, hybrid_touchpoint,residential_spread"
+INTA,4500,A,25,W,800,1045,137,G17,0,Class,0,Remote,remote
+INTA,4803,MB,40,MW,1530,1645,137,G17,0,Class,0,Residential,residential_spread
+INTA,4811,KB,40,F,1400,1645,137,G17,0,Class,0,Residential,residential_spread
+INTA,6003,A,20,T,1830,2115,137,G17,0,Class,0,Residential,residential_spread
