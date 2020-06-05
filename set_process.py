@@ -148,3 +148,96 @@ def get_section_wo_time(T_x):
     #X_wo_time: a set of sections that have no time assignment in 2019 fall
     X_wo_time = list(dict(filter(lambda ele: np.NaN not in ele[1], T_x.items())).keys())
     return X_wo_time
+
+
+def get_overlapping_time_slots(T, t):
+
+    """ 
+    Author: Mehran Navabi
+
+    Input:
+        T - list[str]: all possible timeslots
+        t - str: timeslot currently being considered
+            Timeslots must be formated as: "dow_starttime_endtime"
+    Output:
+        T_clash: subset of timeslots from T which conflict with t
+            For example, say t = 'F_1010_1205'
+            Then T_clash may look like {'F_1010_1205', 'F_1115_1205', 'MWF_1010_1100'}
+            However T_clash could not include 'F_905_955' or 'TR_1200_1445'
+
+    Todo: Fix times so that times before noon are padded with a leading 0
+    It so happens that with the times we have courses running, this lingering bug 
+    does not lead to any issues, but should be fixed regardless
+    """
+
+    t_dow, t_start_time, t_end_time = t.split("_")
+    t_dow = set(t_dow)
+
+    T_clash = set()
+    for t_other in T:
+        if type(t_other) is float:
+            continue
+        t_other_dow, t_other_start_time, t_other_end_time = t_other.split("_")
+        t_other_dow = set(t_other_dow)
+        
+        if (len(t_dow.intersection(t_other_dow)) > 0) and (t_other_start_time <= t_end_time) and (t_start_time <= t_other_end_time):
+            T_clash.add(t_other)
+
+    return T_clash
+
+
+def get_sections_with_overlapping_time_slot(T, X, course_data):
+
+    """ 
+    Author: Mehran Navabi
+
+    Input:
+        T - list[str]: All possible timeslots
+            Timeslots must be formated as: "dow_starttime_endtime"
+        X - list[str]: All sections
+            Sections must be formatted as: "subject_coursenumber_section_occurance"
+        course_data - pd.DataFrame : dataframe of coursedata, must follow format of raw_data/ISYE_FallSemesterScenarios_ClassSchedules.xlsx
+    Output:
+        X_t_clash - dict{str: set{str}}: All times in T are included as a key
+                    The corresponding values represent the sections that conflict with the time for that section
+                    For example, X_t_clash['F_1010_1205'] will include any sections that are taught at the 
+                    following times accourding to course_data
+                    'F_1010_1205', 'F_1115_1205', or 'MWF_1010_1100'
+    """
+
+
+    T_t_clash = dict()
+    X_t_clash = dict()
+    for t in T:
+        T_t_clash[t] = get_overlapping_time_slots(T, t)
+        X_t_clash[t] = set()
+
+    for x in X:
+        t_current_section = course_data[course_data['subject_number_section_orrurance'] == x]["full_time"].iloc[0]
+        if type(t_current_section) is float:
+            continue
+        conflicting_times = T_t_clash[t_current_section]
+        for t in conflicting_times:
+            X_t_clash[t].add(x)
+
+    return X_t_clash
+
+
+def get_enrollement_per_section(course_data, max_enrollment=False):
+
+    if max_enrollment:
+        enrollment_column = 'Max Enroll'
+    else:
+        enrollment_column = 'Enrollment'
+
+    return pd.Series(course_data[enrollment_column].values,index=course_data['subject_number_section_orrurance']).to_dict()
+
+
+def get_room_capacity(room_data):
+
+    return pd.Series(room_data["Rm Max Cap"].values,index=room_data['bldg_room']).to_dict()
+
+def get_course_time(course_data):
+
+    return pd.Series(course_data["full_time"].values,index=course_data['subject_number_section_orrurance']).to_dict()
+
