@@ -100,6 +100,8 @@ def clean_room_data(filepath, buildings):
     # create unique identifier for rooms
     room_data_isye['bldg_room'] = room_data_isye['Bldg Code'] + "_" + room_data_isye['Rm Nbr']
 
+    room_data_isye = room_data_isye[room_data_isye["Rm Max Cap"]>0]
+
     # confirm that bldg_room is a unique identifier
     assert len(room_data_isye) == len(room_data_isye['bldg_room'].unique())
 
