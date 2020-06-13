@@ -1,136 +1,132 @@
 import pandas as pd
 import numpy as np
-pd.options.mode.chained_assignment = None  # default='warn'
+import warnings
 
-isye_course_to_exclude = {
-    "2698",
-    "2699",
-    "4106",
-    "4698",
-    "4699",
-    "4800",
-    "7000",
-    "8997",
-    "8998",
-    "9000",
-}
 
 course_columns = [
-    'Course 1 Subject Code_Course#_Section_CRN_Credits',
-    'Course 2 Subject Code_Course#_Section_CRN_Credits',
-    'Course 3 Subject Code_Course#_Section_CRN_Credits',
-    'Course 4 Subject Code_Course#_Section_CRN_Credits',
-    'Course 5 Subject Code_Course#_Section_CRN_Credits',
-    'Course 6 Subject Code_Course#_Section_CRN_Credits',
-    'Course 7 Subject Code_Course#_Section_CRN_Credits',
-    'Course 8 Subject Code_Course#_Section_CRN_Credits',
-    'Course 9 Subject Code_Course#_Section_CRN_Credits',
-    'Course 10 Subject Code_Course#_Section_CRN_Credits',
-    'Course 11 Subject Code_Course#_Section_CRN_Credits',
-    'Course 12 Subject Code_Course#_Section_CRN_Credits'
+    "subject_code",
+    "course_number",
+    "course_section",
+    "enrollment",
+    "days",
+    "begin_time",
+    "end_time",
+    "exclusively_online",
+    "room_use"
 ]
 
+course_columns_optional = [
+    "bldg_room"
+]
+
+room_columns = [
+    "bldg_room",
+    "capacity",
+    "use"
+]
+
+def standardize_column_name(column_name):
+	"""
+	Input: 
+		column_name - str : represent column name for some dataframe
+
+	Output:
+		column_name: equivalent to the input column name, but standardized 
+		such that all characters are lowercase and spaces are replaced with underscores
+
+	Should be called on the column names of any pandas dataframe as soon is read from an 
+	excel or csv file, so the column names in the dataframe are consistent with those expected
+	in the code.
+	"""
+
+	column_name = column_name.lower()
+	column_name = column_name.replace(" ", "_")
+	return column_name
+
+
+def read_data(filepath, required_columns, optional_columns=None):
+	"""
+	Input: 
+		filepath - str : full filepath of the excel data that will be read
+		required_columns - list[str]: if any of these column names are not present in the data,
+									  an exception will be raised
+		optional_columns - list[str]: if any of these columns are not present in the data,
+			 						  a warning will be displayed
+
+	Output:
+		df - pandas.DataFrame: data pulled from filepath
+
+	Should be called to read an excel file into a dataframe if the user
+	wants to ensure specific columns are present in the dataset
+	"""
+
+    df = pd.read_excel(filepath)
+
+    df.columns = [standardize_column_name(col) for col in df.columns]
+
+    for col in required_columns:
+        if col not in df.columns:
+            raise Exception("Input data was missing column: " + str(col))
+
+    if optional_columns is not None:
+        for col in optional_columns:
+            if col not in df.columns:
+                warnings.warn("Input data was missing optional column: " + str(col) + ". Some functionality may be missing")
+
+    return df
 
 def clean_course_data(filepath):
-    course_raw_data = pd.read_excel(filepath)
-    course_raw_data_isye = course_raw_data[course_raw_data['Subject Code']=='ISYE']
-    course_data_isye = course_raw_data_isye[course_raw_data_isye['Course Number'].apply(lambda num: num not in isye_course_to_exclude)]
+	"""
+	Input: 
+		filepath - str : full filepath of the excel course data that will be read
+
+	Output:
+		df - pandas.DataFrame: data pulled from filepath
+
+	Should be called to load course dataframe before being passed into the constructor for RoomAssignmentOpt
+	Dataprocessing is very minimal, and mainly to ensure standardization of column names for RoomAssignmentOpt
+	"""
+
+    course_data = read_data(filepath, course_columns, course_columns_optional)
+
+    course_data['subject_course_section'] = course_data["subject_code"].astype(str) + "_" + course_data["course_number"].astype(str)  \
+                                           + "_" + course_data["course_section"].astype(str)
+    
 
     # add Subject Code to be able to incorporate other courses later
-    course_data_isye["course_subject_number"] = course_data_isye["Subject Code"] + "_" + course_data_isye["Course Number"]
-    # add unique identifier for each row 
-    course_data_isye["subject_number_section"] = course_data_isye["Subject Code"] + "_" + course_data_isye["Course Number"] + "_" + course_data_isye["Course Section"]
-    # mark courses with multiple meeting times for the same section
-    course_data_isye.sort_values(['subject_number_section'], inplace=True)
+    course_data["subject_course_section_occurrence"] = course_data['subject_course_section'] .astype(str) + course_data["occurrence"].astype(str) 
 
-    course_data_isye["repeated_section"] = course_data_isye['subject_number_section'].eq(course_data_isye['subject_number_section'].shift())
-    course_data_isye['twice_repeated_section'] = (course_data_isye['repeated_section'] & course_data_isye['repeated_section'].eq(  course_data_isye['repeated_section'].shift()))
-    course_data_isye["section_meeting_occurance"] = course_data_isye.apply(
-        lambda row: 0 if not row["repeated_section"]
-        else (1 if not row["twice_repeated_section"]
-              else 2),
-        axis=1).astype(str)
-    # confirm no section meets more than 3 times a week
-    course_data_isye['three_times_repeated_section'] = (course_data_isye['twice_repeated_section'] & course_data_isye['twice_repeated_section'].eq(course_data_isye['twice_repeated_section'].shift()))
-    assert not course_data_isye['three_times_repeated_section'].any()
+    # # mark courses with multiple meeting times for the same section
+    # course_data.sort_values(['course_subject_number_occurence'], inplace=True)
 
-    #remove helper colummns created earlier
-    del course_data_isye['repeated_section']
-    del course_data_isye['twice_repeated_section']
-    del course_data_isye['three_times_repeated_section']
+    # confirm course_subject_number_occurence is a unique identifier for sections
+    if len(course_data["subject_course_section_occurrence"].unique()) != len(course_data):
+        warnings.warn("""Each row of the course dataset should have unique values for the columns:
+                        	Subject Code, Course Number, Course Section, Occurence""")
 
-    # create subject_number_section_orrurance as a true unique identifier for sections
-    course_data_isye["subject_number_section_orrurance"] = course_data_isye["subject_number_section"] + "_" + course_data_isye["section_meeting_occurance"]
-    # confirm it's a unique identifier for sections
-    assert len(course_data_isye["subject_number_section_orrurance"].unique()) == len(course_data_isye)
+    #single column to keep track of course timeslot
+    course_data['full_time'] = course_data['days'] + "_" + course_data['begin_time'].astype(str) + "_" + course_data['end_time'].astype(str)
 
-    #single column to keep track of course day and time
-    course_data_isye['full_time'] = course_data_isye['Days'] + "_" + course_data_isye['Begin Time'].astype(str) + "_" + course_data_isye['End Time'].astype(str)
+    return course_data
 
-    # create unique identifier for rooms
-    course_data_isye['bldg_room'] = course_data_isye['Building Number'] + "_" + course_data_isye['Room #']
+def clean_room_data(filepath):
+	"""
+	Input: 
+		filepath - str : full filepath of the excel course data that will be read
 
-    buildings_used_for_isye = course_raw_data[course_raw_data['Subject Code']=='ISYE']['Building Number'].unique()
-    return course_data_isye, buildings_used_for_isye
+	Output:
+		df - pandas.DataFrame: data pulled from filepath
 
+	Should be called to load room dataframe before being passed into the constructor for RoomAssignmentOpt
+	Dataprocessing is very minimal, and mainly to ensure standardization of column names for RoomAssignmentOpt
+	"""
 
-def any_isye_course(student_row):
-    isye_course_all = list()
-    for column_name in course_columns:
-        isye_course_current = type(student_row[column_name]) is str and "ISYE" in student_row[column_name]
-        #in_classroom_isye_course_current = isye_course_current and 
-        isye_course_all.append(isye_course_current)
-    return np.array(isye_course_all).any()
+    room_data = read_data(filepath, room_columns)
 
+    if len(room_data["bldg_room"].unique()) != len(room_data):
+        warnings.warn("""Each row of the room dataset should have unique values for the column: bldg_room""")
 
-def clean_student_data(filepath):
-    students_raw_data = pd.read_excel(filepath)
-    student_data_isye = students_raw_data[
-        students_raw_data.apply(any_isye_course, axis=1)]
-    # confirm SYSGENID is a unique identifier
-    assert len(student_data_isye) == len(student_data_isye['SYSGENID'].unique())
-    return student_data_isye
+    room_data = room_data[room_data["capacity"]>0]
 
+    return room_data
 
-def clean_room_data(filepath, buildings):
-    rooms_raw_data = pd.read_excel(filepath)
-    room_data_isye = rooms_raw_data[rooms_raw_data['Bldg Code'].apply(
-        lambda bldg_code: bldg_code in set(buildings))]
-
-    # create unique identifier for rooms
-    room_data_isye['bldg_room'] = room_data_isye['Bldg Code'] + "_" + room_data_isye['Rm Nbr']
-
-    room_data_isye = room_data_isye[room_data_isye["Rm Max Cap"]>0]
-
-    # confirm that bldg_room is a unique identifier
-    assert len(room_data_isye) == len(room_data_isye['bldg_room'].unique())
-
-    return room_data_isye
-
-def clean_detail_room_data(filepath, buildings):
-    # data cleaning of the new raw data with detail capacity information.
-    # the output format should be same as the above function.
-    # I keep the previous one, so you can choose use which one in your formulation
-
-    rooms_raw_data = pd.read_excel(filepath)
-
-
-    # fill zero in the beginning of building code
-    rooms_raw_data["Facility"] = rooms_raw_data["Facility"].apply(lambda x: str(x).zfill(3)
-    if str(x).isnumeric() else (x.zfill(4) if len(x) < 4 else x))
-
-    rooms_raw_data['Room_code'] = rooms_raw_data['Room Name (If different from Room Field)'].fillna(rooms_raw_data['Room'])
-    rooms_raw_data['Room_code'] = rooms_raw_data['Room_code'].astype(str).replace('\.0', '', regex=True)
-    rooms_raw_data['bldg_room'] = rooms_raw_data["Facility"] + '_' + rooms_raw_data["Room_code"]
-
-    # Some room don't have max cp, so I use 6'cp as max cp
-    rooms_raw_data['Station Count (Current)'] = rooms_raw_data['Station Count (Current)'].fillna(
-        rooms_raw_data["6' Module Capacity at 36sf"].astype(str))
-
-    room_data_isye = rooms_raw_data[rooms_raw_data['Facility'].apply(
-        lambda bldg_name: bldg_name in set(buildings))]
-
-    # confirm that bldg_room is a unique identifier
-    assert len(room_data_isye) == len(room_data_isye['bldg_room'].unique())
-
-    return room_data_isye

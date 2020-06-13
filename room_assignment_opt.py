@@ -1,10 +1,11 @@
+import pandas as pd
 from gurobipy import *
-import data_process_all as dp
-import set_process as sp
 from abc import ABC
 from abc import abstractmethod
-from generic_schedule_opt import GenericScheduleOpt
 
+import data_process as dp
+import set_process as sp
+from generic_schedule_opt import GenericScheduleOpt
 
 class RoomAssignmentOpt(GenericScheduleOpt):
 
@@ -15,10 +16,11 @@ class RoomAssignmentOpt(GenericScheduleOpt):
         return
 
     def get_all_sets_params(self):
-        self.C = self.course_data['course_subject_number'].unique().tolist()
-        self.X = self.course_data['subject_number_section_orrurance'].tolist()
+        self.C = self.course_data['subject_course_section'].unique().tolist()
+        self.X = self.course_data['subject_course_section_occurrence'].tolist()
         self.R = self.room_data['bldg_room'].tolist()
         self.T = self.course_data['full_time'].unique()
+        self.timeintervals = sp.generate_simple_time_intervals()
 
         print("setting course to section set")
         self.X_c = sp.get_section_set(self.course_data, self.C)
@@ -26,12 +28,12 @@ class RoomAssignmentOpt(GenericScheduleOpt):
         self.R_x, self.X_r = sp.get_room_sets_trivial(self.course_data, self.room_data,
                                               self.R, self.X)
         print("setting time to section availability set")
-        self.X_t = sp.get_sections_with_overlapping_time_slot(self.T, self.X, self.course_data)
+        self.X_t = sp.get_sections_with_overlapping_time_slot(self.T, self.X, self.course_data, self.timeintervals)
         print("setting parameters")
         self.p_x = sp.get_enrollement_per_section(self.course_data,
-                                                  enrollment_column='Adjusted Enrollment After Combining Cross-Listed Sections'
+                                                  enrollment_column='enrollment'
                                                   )
-        self.n_r = sp.get_room_capacity(self.room_data)
+        self.n_r = sp.get_room_capacity(self.room_data, capacity_column='capacity')
         self.t_x = sp.get_course_time(self.course_data)
         pass
 
@@ -44,7 +46,6 @@ class RoomAssignmentOpt(GenericScheduleOpt):
 
         model_vars = {"X_xr": X_xr}
         return model_vars
-
 
     def set_model_constrs(self, model, model_vars):
         print("setting model constraints")
@@ -59,7 +60,7 @@ class RoomAssignmentOpt(GenericScheduleOpt):
         # will need to be modified to exclude courses taught online
         print("constraint: at most one section in room at a given time")
         C_2 = model.addConstrs((quicksum(X_xr[(x, r)] for x in set(self.X).intersection(set(self.X_r[r])).intersection(set(self.X_t[t]))) <= 1
-                                for r in self.R for t in self.T), "")
+                                for r in self.R for t in self.timeintervals), "")
 
         return
 
@@ -71,16 +72,18 @@ class RoomAssignmentOpt(GenericScheduleOpt):
 
 
 if __name__ == "__main__":
-    print("cleaning course data")
-    course_data, buildings_used = dp.clean_course_data('raw_data/ISYE_FallSemesterScenarios_ClassSchedules.xlsx')
-    course_data, buildings_used = dp.clean_course_data('raw_data/Fall 2019 Schedule of Classes After Crosslisted Sections are combined and no classroom classes removed.xlsx')
-    print("cleaning room data")
-    room_data = dp.clean_room_data('raw_data/ISYE_FallSemesterScenarios_BuildingRooms.xlsx',
-                                               buildings=buildings_used)
 
+    #load data
+    course_data_filepath = "~/Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_courses_example.xlsx"
+    room_data_filepath = "~/Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_rooms_example.xlsx"
+    course_data = dp.clean_course_data(course_data_filepath)
+    room_data = dp.clean_room_data(room_data_filepath)
 
+    #generate model
     assign_opt = RoomAssignmentOpt(course_data, room_data)
     model = assign_opt.construct_model()
     model.update()
     model.printStats()
+
+    #solve model
     model.optimize()
