@@ -70,12 +70,83 @@ class RoomAssignmentOpt(GenericScheduleOpt):
         model.setObjective(quicksum(self.p_x[x] / self.n_r[r] * X_xr[(x, r)] for x in self.X for r in self.R_x[x]), GRB.MINIMIZE)
         return
 
+    @staticmethod
+    def output_result(
+        model = None,
+        output_path = "room_asignment_opt_output_example.csv",
+        occurrence = False
+        ):
+
+        r'''
+        Standard output file: .csv with coulumns: 
+        ["Subject Code","Course Code", "Course Section","Occurrence","Bldg_room","Bldg Code","Room Code"]
+        
+        Parameters:
+        -------------
+        model: str or gurobipy.Model, default=None
+            If a str is passed, it should be the filepath of .sol file.
+            ATTENTION: if read from a .sol file, the variable name must not have white space when define. 
+            If a gurobipy.Model is passes, it should be a solved gurobi Model
+
+        output_path: str, default="room_asignment_opt_output_example.csv"
+            the output path of the .csv file. Save to the same path as project file by default. 
+        
+        occurrence: bool, default = False
+            Wether include occurrence column in the output file, false by default
+        '''
+        solution = {}
+
+        if isinstance(model,Model):
+            for v in model.getVars():
+                if v.x ==1:
+                    solution[v.varName] = v.x
+
+        elif isinstance(model,str):
+            import csv
+            with open(file = model, newline='\n') as csvfile:
+                reader = csv.reader((line.replace('  ', ' ') for line in csvfile), delimiter=' ')
+                next(reader)  # skip header
+                
+                for var, value in reader:
+                    if int(value) ==1:
+                        solution[var] = float(value)
+        else:
+            raise TypeError("model should be str or gurobipy.Model")
+
+        # Split the varName into seperate columns
+        sol = pd.DataFrame.from_dict(solution, orient='index')
+        sol.reset_index(level=0, inplace=True)
+        sol.columns = ["X_xr","value"]
+        sol["X_xr"]=sol.X_xr.str.extract(r'\[(.*)\]')
+        output = sol["X_xr"].str.split("+",expand = True) 
+        temp = output[0].str.split("_",expand = True) 
+        output["Subject Code"] = temp[0]
+        output["Course Code"] = temp[1]
+        output["Course Section"] = temp[2].astype(str).str[:-1]
+        
+        #TODO:
+        if occurrence:
+            pass
+
+        output["Occurrence"] = temp[2].astype(str).str[-1]
+        output["Bldg Code"]=output[1].str.extract(r'^(.+?)_')
+        output["Room Code"]=output[1].str.extract(r'[^_]*_(.*)')
+        output = output.drop(columns = [0])
+        output.rename(columns={1:'Bldg_room'}, inplace=True)
+
+        output = output[["Subject Code","Course Code", "Course Section","Occurrence","Bldg_room","Bldg Code","Room Code"]]
+
+        output.to_csv(output_path,index = False)
+
+
+
+
 
 if __name__ == "__main__":
 
     #load data
-    course_data_filepath = "~/Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_courses_example.xlsx"
-    room_data_filepath = "~/Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_rooms_example.xlsx"
+    course_data_filepath = "../Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_courses_example.xlsx"
+    room_data_filepath = "../Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_rooms_example.xlsx"
     course_data = dp.clean_course_data(course_data_filepath)
     room_data = dp.clean_room_data(room_data_filepath)
 
@@ -87,3 +158,5 @@ if __name__ == "__main__":
 
     #solve model
     model.optimize()
+
+    RoomAssignmentOpt.output_result(model=model)
