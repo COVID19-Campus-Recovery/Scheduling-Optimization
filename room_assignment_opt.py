@@ -70,6 +70,7 @@ class RoomAssignmentOpt(GenericScheduleOpt):
         model.setObjective(quicksum(self.p_x[x] / self.n_r[r] * X_xr[(x, r)] for x in self.X for r in self.R_x[x]), GRB.MINIMIZE)
         return
 
+    
     @staticmethod
     def output_result(
         model = None,
