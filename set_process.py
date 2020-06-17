@@ -1,5 +1,7 @@
 import numpy as np
-D = ("M", "T", "W", "R", "F")
+import pandas as pd
+
+all_day = ("M", "T", "W", "R", "F")
 
 F = [0, 6, 8, 12]
 
@@ -21,20 +23,24 @@ course_columns = [
 ]
 
 
-def get_section_set(course_data, C):
+def get_section_set(course_data, all_course):
     # Sections for each course
-    X_c = dict()
-    for c_current in C:
-        X_c[c_current] = course_data[course_data['course_subject_number'] == c_current][
-            'subject_number_section_orrurance'].tolist()
-    return X_c
+    section_course_dict = dict()
+    for course_current in all_course:
+        section_course_dict[course_current] = course_data[course_data['subject_course_section'] == course_current][
+            'subject_course_section_occurrence'].tolist()
+    return section_course_dict
 
 
-def get_student_sets(student_data, X):
-    # set of sections which each student is enrolled
-    # change the student registeration courses to standard form: subject_number_section_orrurance
+def get_student_sets(student_data, all_section):
+    """ 
+    Depricated (at least temporarily)
+    A revised version of this method, considering the proper input data format
+    will likely be created after we have finalized how individual students will 
+    be considered in the optimization model
+    """
     student_data.fillna("-", inplace=True)
-    X_s = dict()
+    section_student_dict = dict()
     for row in student_data.iterrows():
         s_courses = []
         for c in course_columns:
@@ -43,64 +49,119 @@ def get_student_sets(student_data, X):
                 course_section = '_'.join(templist[:3])
                 for i in range(3):
                     standard_form = course_section + "_" + str(i)
-                    if standard_form in X:
+                    if standard_form in all_section:
                         s_courses.append(standard_form)
-        X_s[row[1]["SYSGENID"]] = s_courses
+        section_student_dict[row[1]["SYSGENID"]] = s_courses
     # set of courses that student is enrolled in
-    C_s = dict()
-    for s, x in X_s.items():
+    course_student_dict = dict()
+    for s, x in section_student_dict.items():
         cou = set()
         for i in x:
             cou.add(i[:9])
-        C_s[s] = list(cou)
-    return X_s, C_s
+        course_student_dict[s] = list(cou)
+    return section_student_dict, course_student_dict
 
 
-def get_timeslot_sets(course_data,X, T):
-    # Associate sections and time slots
-    # For now, we don't enforce any restrictions and
-    # allow any section to be assigned to any time
+def get_timeslot_sets(course_data, all_section, all_timeslot):
+    """ 
+    Input:
+        course_data - pd.DataFrame: properly formatted course dataframe
+        all_section - set(str): set of all sections available in the optimization problem
+        all_timeslot - set(str): set of all timeslots available in the optimization problem
+    Output:
+        timeslot_section_dictionary - dict(str, str): maps timeslots to sections that may be taught in that timeslot
+        section_timeslot_dictionary - dict(str, str): maps sections to timeslots in which they may be taught
+        timeslot_day_dictionary - dict(str, str): maps timeslots to days of the week where the timeslot if taught
 
-    # For now, we don't enforce any restrictions and allow any section to be assigned to any time
-    T_x = dict()
-    for x in X:
-        T_x[x] = course_data[course_data["subject_number_section_orrurance"] == x]["full_time"].tolist()
+    Currently, this method does not enforce any restrictions and allows any section to be assigned to any time
+    This method is to be used by the ScheduleOpt model, and potentially other classes that inherit ScheduleOpt
+    this method is not NOT to be used by RoomAssignmentOpt, or any classes that inherit RoomAssignmentOpt, 
+        as this set is irrelevant to the formulation for RoomAssignmentOpt
+    """
 
-    X_t = dict()
-    for t in T:
-        X_t[t] = X
+    timeslot_section_dictionary = dict()
+    for section in all_section:
+        timeslot_section_dictionary[section] = course_data[course_data["subject_course_section_occurrence"] == x]["full_time"].tolist()
+
+    section_timeslot_dictionary = dict()
+    for timeslot in all_timeslot:
+        section_timeslot_dictionary[timeslot] = all_section
+
     # associate times with days of week
-    T_d = dict()
-    for d in D:
-        relevant_time_slots = [t for t in T if type(t) is str and d in t]
-        T_d[d] = relevant_time_slots
-    return T_x, X_t, T_d
+    timeslot_day_dictionary = dict()
+    for day in all_day:
+        relevant_time_slots = [timeslot for timeslot in all_timeslot if type(timeslot) is str and day in timeslot]
+        timeslot_day_dictionary[day] = relevant_time_slots
+
+    return timeslot_section_dictionary, section_timeslot_dictionary, timeslot_day_dictionary
 
 
-def get_room_sets(course_data, room_data, R, X):
-    # associate classrooms with applicable sections
-    # currently, the only restriction we account for are course capacities
-    R_x = dict()
-    X_r = dict()
-    for r in R:
+def get_room_sets(course_data, room_data, all_room, all_section):
+    """ 
+    Input:
+        course_data - pd.DataFrame: properly formatted course dataframe
+        room_data - pd.DataFrame: properly formatted room dataframe
+        all_section - set(str): set of all sections available in the optimization problem
+        all_room - set(str): set of all rooms available in the optimization problem
+    Output:
+        room_section_dictionary - dict(str, str): maps rooms to sections that may be taught in that timeslot
+        section_room_dictionary - dict(str, str): maps sections to rooms in which they may be taught
+
+    Uses rooms' capacities and sections enrollment to determine whether it is feasible to assign a section to a given room
+    The interpretation of the capacity and enrollment field is irrelevant to this method. 
+    The meaning of the capacity and enrollment fields is determined when designing the input data files used to generate room_data and course data
+        and the restriction is enforced by this method regardless of the meaning.
+    Other methods, such as get_rooms_set_trivial, can alternatively be used to generate room_section_dictionary and section_room_dictionary
+        if this restriction is not desired
+    """
+    room_section_dictionary = dict()
+    section_room_dictionary = dict()
+    for room in all_room:
         relevant_sections_for_room = list()
-        for x in X:
-            if x in R_x:
-                relevant_room_for_sections = R_x[x]
+        for section in all_section:
+            if section in room_section_dictionary:
+                relevant_room_for_sections = room_section_dictionary[section]
             else:
                 relevant_room_for_sections = list()
-                R_x[x] = relevant_room_for_sections
-            room_capacity = room_data[room_data['bldg_room'] == r]["Rm Max Cap"].iloc[0]
+                currently[section] = relevant_room_for_sections
+            room_capacity = room_data[room_data['bldg_room'] == room]["capacity"].iloc[0] #changed Rm Max Cap to capacity
             course_enrollment_capacity = \
-            course_data[course_data['subject_number_section_orrurance'] == x]['Max Enroll'].iloc[0]
-            if room_capacity > course_enrollment_capacity:
-                relevant_sections_for_room.append(x)
-                relevant_room_for_sections.append(r)
-        X_r[r] = relevant_sections_for_room
-    return R_x, X_r
+            course_data[course_data['subject_course_section_occurrence'] == section]['enrollment'].iloc[0] #changed Max Enroll to enrollment
+            if room_capacity >= course_enrollment_capacity:
+                relevant_sections_for_room.append(section)
+                relevant_room_for_sections.append(room)
+        section_room_dictionary[room] = relevant_sections_for_room
+    return room_section_dictionary, section_room_dictionary
+
+
+def get_room_sets_trivial(course_data, room_data, all_room, all_section):
+    """ 
+    Input:
+        course_data - pd.DataFrame: properly formatted course dataframe
+        room_data - pd.DataFrame: properly formatted room dataframe
+        all_section - set(str): set of all sections available in the optimization problem
+        all_room - set(str): set of all rooms available in the optimization problem
+    Output:
+        room_section_dictionary - dict(str, str): maps rooms to sections that may be taught in that timeslot
+        section_room_dictionary - dict(str, str): maps sections to rooms in which they may be taught
+
+    Should be used if every room should be made available to every section.
+    This is unrealistic for generating final results, but this method may be useful for testing and model validation purposes
+    """
+
+    room_section_dictionary = dict()
+    section_room_dictionary = dict()
+    for room in all_room:
+        section_room_dictionary[room] = all_section
+    for section in all_section:
+        room_section_dictionary[section] = all_room
+    return room_section_dictionary, section_room_dictionary
+
 
 def get_capacity_sets(room_data):
-    #n_rf: capacity of room r under safe distance f
+    """
+    Depricated
+    """
     n_rf = dict()
     for f in F:
         if f == 0:
@@ -114,12 +175,13 @@ def get_capacity_sets(room_data):
 
     return n_rf
 
-def get_size_set(X_s):
-    # S_x: the set of students choosing section x
-    # p_x: class size of section x
+def get_size_set(section_student_dict):
+    """
+    Depricated
+    """
     S_x = {}
     p_x = {}
-    for s, x in X_s.items():
+    for s, x in section_student_dict.items():
         for i in x:
             if i not in S_x.keys():
                 S_x[i] = [s]
@@ -132,112 +194,186 @@ def get_size_set(X_s):
     return S_x, p_x
 
 
-
 def get_noroom_section_sets(course_data, Size_x):
+    """
+    Depricated
+    """
     # X_wo_room: a set of sections that have no room assignment in 2019 fall
     X_wo_room = set()
 
     for x, n in Size_x.items():
-        room = course_data[course_data['subject_number_section_orrurance'] == x]['bldg_room'].iloc[0]
+        room = course_data[course_data['subject_course_section_occurrence'] == x]['bldg_room'].iloc[0]
         if str(room) == "nan":
             X_wo_room.add(x)
     return X_wo_room
 
 
-def get_section_wo_time(T_x):
-    #X_wo_time: a set of sections that have no time assignment in 2019 fall
-    X_wo_time = list(dict(filter(lambda ele: np.NaN not in ele[1], T_x.items())).keys())
-    return X_wo_time
+def get_section_w_time(T_x):
+    """
+    Depricated
+    """
+    #X_w_time: a set of sections that have no time assignment in 2019 fall
+    X_w_time = list(dict(filter(lambda ele: np.NaN not in ele[1], T_x.items())).keys())
+    return X_w_time
 
 
-def get_overlapping_time_slots(T, t):
+def generate_simple_time_intervals(min_hour=6,max_hour=20,interval_length=0.25):
+    """
+    Depricated
+    """
+    all_dow = ['M', 'T', 'W', 'R', 'F']
+
+    minute_values = [int(60*interval_length*i) for i in range(int(1/interval_length))]
+    all_times_of_day = list()
+    for hour in range(min_hour, max_hour):
+        all_times_of_day.append(str(hour)+"00")
+        for minute_value in minute_values[1:]:
+            all_times_of_day.append(str(hour)+str(minute_value))
+        
+    all_times_of_day.append(str(max_hour) +"00")
+
+    all_time_intervals=list()
+    for dow in all_dow:
+        for i in range(len(all_times_of_day)-1):
+            all_time_intervals.append(dow + "_" + all_times_of_day[i] + "_" + all_times_of_day[i+1])
+
+    return(all_time_intervals)
+
+def get_sections_with_overlapping_time_slot_depricated(all_timeslot, all_section, course_data, timeinterval):
 
     """ 
-    Author: Mehran Navabi
+    Depricated
+    """
+    X_t_clash = dict()
+    X_timeslot = dict()
 
+    for section in all_section:
+        timeslot_current_section = course_data[course_data['subject_course_section_occurrence'] == section]["full_time"].iloc[0]
+        if timeslot_current_section in X_timeslot:
+            X_timeslot[t_current_section].add(section)
+        else:
+            X_timeslot[t_current_section] = {section}
+
+    section_student_dictimpletime = dict()
+    for simpletime in timeinterval:
+        timeslots_conflicting = get_overlapping_time_slots(all_timeslot, simpletime)
+        sections_conflicting = set()
+        for timeslot in timeslots_conflicting:
+            if timeslot in X_timeslot:
+                sections_conflicting = sections_conflicting.union(X_timeslot[timeslot])
+        section_student_dictimpletime[simpletime] = sections_conflicting
+
+    return section_student_dictimpletime
+
+def get_overlapping_time_slots(all_timeslot, current_timeslot):
+
+    """ 
     Input:
-        T - list[str]: all possible timeslots
-        t - str: timeslot currently being considered
-            Timeslots must be formated as: "dow_starttime_endtime"
+        all_timeslot - list[str]: all possible timeslots
+        current_timeslot - str: timeslot currently being considered
+                                Timeslots must be formated as: "dow_starttime_endtime"
     Output:
-        T_clash: subset of timeslots from T which conflict with t
-            For example, say t = 'F_1010_1205'
-            Then T_clash may look like {'F_1010_1205', 'F_1115_1205', 'MWF_1010_1100'}
-            However T_clash could not include 'F_905_955' or 'TR_1200_1445'
+        timeslot_clash: subset of timeslots from T which conflict with t
+            For example, say current_timeslot = 'F_1010_1205'
+            Then timeslot_clash may look like {'F_1010_1205', 'F_1115_1205', 'MWF_1010_1100'}
+            However timeslot_clash could not include 'F_905_955' or 'TR_1200_1445'
+
+    This method is intended as a helper method to get_sections_with_overlapping_time_slot()
 
     Todo: Fix times so that times before noon are padded with a leading 0
     It so happens that with the times we have courses running, this lingering bug 
     does not lead to any issues, but should be fixed regardless
     """
 
-    t_dow, t_start_time, t_end_time = t.split("_")
-    t_dow = set(t_dow)
+    current_dow, current_start_time, current_end_time = current_timeslot.split("_")
+    current_dow = set(current_dow)
 
-    T_clash = set()
-    for t_other in T:
-        if type(t_other) is float:
+    timeslot_clash = set()
+    for other_timeslot in all_timeslot:
+        if type(other_timeslot) is float:
             continue
-        t_other_dow, t_other_start_time, t_other_end_time = t_other.split("_")
-        t_other_dow = set(t_other_dow)
-        
-        if (len(t_dow.intersection(t_other_dow)) > 0) and (t_other_start_time <= t_end_time) and (t_start_time <= t_other_end_time):
-            T_clash.add(t_other)
+        other_dow, other_start_time, other_end_time = other_timeslot.split("_")
+        other_dow = set(other_dow)
 
-    return T_clash
+        if (len(current_dow.intersection(other_dow)) > 0) and (other_start_time < current_end_time) and (current_start_time <= other_end_time):
+            timeslot_clash.add(other_timeslot)
+
+    return timeslot_clash
 
 
-def get_sections_with_overlapping_time_slot(T, X, course_data):
+def get_sections_with_overlapping_time_slot(all_timeslot, all_section, course_data, timeslot):
 
     """ 
-    Author: Mehran Navabi
-
     Input:
-        T - list[str]: All possible timeslots
-            Timeslots must be formated as: "dow_starttime_endtime"
-        X - list[str]: All sections
-            Sections must be formatted as: "subject_coursenumber_section_occurance"
-        course_data - pd.DataFrame : dataframe of coursedata, must follow format of raw_data/ISYE_FallSemesterScenarios_ClassSchedules.xlsx
+        all_timeslot - list[str]: set of all timeslots available in the optimization problem
+                                Timeslots must be formated as: "dow_starttime_endtime"
+        all_section - list[str]: set of all sections available in the optimization problem
+                                Sections must be formatted as: "subject_course_section_occurrence"
+        course_data - pd.DataFrame: properly formatted course dataframe
     Output:
-        X_t_clash - dict{str: set{str}}: All times in T are included as a key
+        section_timeslot_clash_dictionary - dict{str: set{str}}: All times in T are included as a key
                     The corresponding values represent the sections that conflict with the time for that section
                     For example, X_t_clash['F_1010_1205'] will include any sections that are taught at the 
                     following times accourding to course_data
                     'F_1010_1205', 'F_1115_1205', or 'MWF_1010_1100'
     """
 
+    section_timeslot_dictionary = dict() #store sections that are taught at a given timeslot
 
-    T_t_clash = dict()
-    X_t_clash = dict()
-    for t in T:
-        T_t_clash[t] = get_overlapping_time_slots(T, t)
-        X_t_clash[t] = set()
+    for section in all_section:
+        timeslot_current_section = course_data[course_data['subject_course_section_occurrence'] == section]["full_time"].iloc[0]
+        if timeslot_current_section in section_timeslot_dictionary:
+            section_timeslot_dictionary[timeslot_current_section].add(section)
+        else:
+            section_timeslot_dictionary[timeslot_current_section] = {section}
 
-    for x in X:
-        t_current_section = course_data[course_data['subject_number_section_orrurance'] == x]["full_time"].iloc[0]
-        if type(t_current_section) is float:
-            continue
-        conflicting_times = T_t_clash[t_current_section]
-        for t in conflicting_times:
-            X_t_clash[t].add(x)
+    section_timeslot_clash_dictionary = dict() #stores sections that are taught a timeslot that conflicts with the given timeslot
 
-    return X_t_clash
+    for current_timeslot in all_timeslot:
+        all_conflicting_timeslot = get_overlapping_time_slots(all_timeslot, current_timeslot)
+        sections_conflicting = set()
+        for conflicting_timeslot in all_conflicting_timeslot:
+            if conflicting_timeslot in section_timeslot_dictionary:
+                sections_conflicting = sections_conflicting.union(section_timeslot_dictionary[conflicting_timeslot])
+        section_timeslot_clash_dictionary[current_timeslot] = sections_conflicting
 
-
-def get_enrollement_per_section(course_data, max_enrollment=False):
-
-    if max_enrollment:
-        enrollment_column = 'Max Enroll'
-    else:
-        enrollment_column = 'Enrollment'
-
-    return pd.Series(course_data[enrollment_column].values,index=course_data['subject_number_section_orrurance']).to_dict()
+    return section_timeslot_clash_dictionary
 
 
-def get_room_capacity(room_data):
+def get_enrollement_per_section(course_data, enrollment_column='enrollment'):
+    """ 
+    Input:
+        course_data - pd.DataFrame: properly formatted course dataframe
+    Output:
+        enrollment_section_dict - dict{str: str}: maps a section to it's enrollment, according to course_data
 
-    return pd.Series(room_data["Rm Max Cap"].values,index=room_data['bldg_room']).to_dict()
+    Todo: This method is very simple and repetitive, considering the the two methods that follow.
+        Should consider a more elegant design.
+    """
+
+    enrollment_section_dictionary = pd.Series(course_data[enrollment_column].values,index=course_data['subject_course_section_occurrence']).to_dict()
+    return enrollment_section_dictionary
+
+
+def get_room_capacity(room_data, capacity_column='capacity'):
+    """ 
+    Input:
+        room_data - pd.DataFrame: properly formatted room dataframe
+    Output:
+        enrollment_section_dict - dict{str: str}: maps a section to it's enrollment, according to room_data
+    """
+
+    capacity_room_dictionary = pd.Series(room_data[capacity_column].values,index=room_data['bldg_room']).to_dict()
+    return capacity_room_dictionary
 
 def get_course_time(course_data):
+    """ 
+    Input:
+        course_data - pd.DataFrame: properly formatted course dataframe
+    Output:
+        timeslot_section_dictionary - dict{str: str}: maps a section to it's timeslot, according to course_data
+    """
 
-    return pd.Series(course_data["full_time"].values,index=course_data['subject_number_section_orrurance']).to_dict()
+    timeslot_section_dictionary = pd.Series(course_data["full_time"].values,index=course_data['subject_course_section_occurrence']).to_dict()
+    return timeslot_section_dictionary
 
