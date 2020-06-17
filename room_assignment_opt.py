@@ -11,7 +11,7 @@ class RoomAssignmentOpt(GenericScheduleOpt):
 
     def __init__(self, course_data, room_data):
         super().__init__()
-        self.course_data = course_data
+        self.course_data, self.course_data_exclusively_online = dp.separate_online_courses(course_data)
         self.room_data = room_data
         return
 
@@ -20,7 +20,7 @@ class RoomAssignmentOpt(GenericScheduleOpt):
         self.X = self.course_data['subject_course_section_occurrence'].tolist()
         self.R = self.room_data['bldg_room'].tolist()
         self.T = self.course_data['full_time'].unique()
-        self.timeintervals = sp.generate_simple_time_intervals()
+        # self.timeintervals = sp.generate_simple_time_intervals()
 
         print("setting course to section set")
         self.X_c = sp.get_section_set(self.course_data, self.C)
@@ -28,7 +28,9 @@ class RoomAssignmentOpt(GenericScheduleOpt):
         self.R_x, self.X_r = sp.get_room_sets_trivial(self.course_data, self.room_data,
                                               self.R, self.X)
         print("setting time to section availability set")
-        self.X_t = sp.get_sections_with_overlapping_time_slot(self.T, self.X, self.course_data, self.timeintervals)
+        # self.X_t = sp.get_sections_with_overlapping_time_slot(self.T, self.X, self.course_data, self.timeintervals)
+        self.X_t = sp.get_sections_with_overlapping_time_slot(self.T, self.X, self.course_data, self.T)
+
         print("setting parameters")
         self.p_x = sp.get_enrollement_per_section(self.course_data,
                                                   enrollment_column='enrollment'
@@ -59,8 +61,10 @@ class RoomAssignmentOpt(GenericScheduleOpt):
         # At most one section can be to a room at a given time
         # will need to be modified to exclude courses taught online
         print("constraint: at most one section in room at a given time")
+        # C_2 = model.addConstrs((quicksum(X_xr[(x, r)] for x in set(self.X).intersection(set(self.X_r[r])).intersection(set(self.X_t[t]))) <= 1
+        #                         for r in self.R for t in self.timeintervals), "")
         C_2 = model.addConstrs((quicksum(X_xr[(x, r)] for x in set(self.X).intersection(set(self.X_r[r])).intersection(set(self.X_t[t]))) <= 1
-                                for r in self.R for t in self.timeintervals), "")
+                                for r in self.R for t in self.T), "")
 
         return
 
@@ -141,13 +145,11 @@ class RoomAssignmentOpt(GenericScheduleOpt):
 
 
 
-
-
 if __name__ == "__main__":
 
     #load data
-    course_data_filepath = "../Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_courses_example.xlsx"
-    room_data_filepath = "../Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_rooms_example.xlsx"
+    course_data_filepath = "~/Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_courses_example.xlsx"
+    room_data_filepath = "~/Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_rooms_example.xlsx"
     course_data = dp.clean_course_data(course_data_filepath)
     room_data = dp.clean_room_data(room_data_filepath)
 
