@@ -151,36 +151,40 @@ def get_room_sets(course_data, room_data, all_room, all_section):
     Output:
         bldgroom_section_dictionary - dict(str, str): maps rooms to sections that may be taught in that timeslot
         section_bldgroom_dictionary - dict(str, str): maps sections to rooms in which they may be taught
+   
+    The "use" column of room_data and the "room_use" column of all_sections
+        are used to determine which sections may be taught in each room
+    A room may only have one "use", while a section might have multiple valid
+        "room_use" values, which should already be comma separated
+    For example, a row in course_data may have the string "class,conference room"
+        in the "room_use" column. This indicates that any bldgroom in room_data
+        with a value of "class" or "conference room" in its "use" is applicable 
+        to the given row in course_data
+
+    The implmentation bellow is naive and may be improved for runtime
     """
 
+
+    #naive implementation
     bldgroom_section_dictionary = dict()
     section_bldgroom_dictionary = dict()
-
-    all_use = [use.replace(" ", "") for use in room_data['use'].unique()]
-    bldgroom_use_dict = {use: room_data[room_data['use']==use]['bldg_room'].tolist() for use in all_use}
     use_section_dict = pd.Series(course_data['room_use'].values,index=course_data['subject_course_section_occurrence']).to_dict()
     use_section_dict = {section: use.replace(" ", "").split(",") for section, use in use_section_dict.items()}
-    section_use_dict = dict()
+    use_bldgroom_dict = pd.Series(room_data['use'].values,index=room_data['bldg_room']).to_dict()
+    use_bldgroom_dict = {bldgroom: use.replace(" ", "") for bldgroom, use in use_bldgroom_dict.items()}
+    
+    for bldgroom in all_room:
+        section_bldgroom_dictionary[bldgroom] = set()
 
-    for section, section_current_use in use_section_dict.items():
-        valid_rooms = {bldg_room for use in section_current_use for bldg_room in bldgroom_use_dict[use]}
-        bldgroom_section_dictionary[section] = valid_rooms
-        for use in section_current_use:
-            if use in section_use_dict:
-                section_use_dict[use].add(section)
-            else:
-                section_use_dict[use] = {section}
-
-    for use in all_use:
-        bldgroom_current_use = bldgroom_use_dict[use]
-        if use not in section_use_dict:
-            continue
-        section_current_use = section_use_dict[use]
-        for bldg_room in bldgroom_current_use:
-            if bldg_room in section_bldgroom_dictionary:
-                section_bldgroom_dictionary[bldg_room] = section_bldgroom_dictionary.union(set(section_current_use))
-            else:
-                section_bldgroom_dictionary[bldg_room] = set(section_current_use)
+    for section in all_section:
+        current_section_all_use = set(use_section_dict[section])
+        bldgroom_current_section = set() #initialize set of bldgroom for current section
+        for bldgroom in all_room:
+            current_room_use = use_bldgroom_dict[bldgroom]
+            if current_room_use in current_section_all_use:
+                bldgroom_current_section.add(bldgroom)
+                section_bldgroom_dictionary[bldgroom].add(section)
+        bldgroom_section_dictionary[section] = bldgroom_current_section #let the value of bldgroom_section_dictionary point to this set
 
     return bldgroom_section_dictionary, section_bldgroom_dictionary
 
