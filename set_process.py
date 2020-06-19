@@ -24,7 +24,14 @@ course_columns = [
 
 
 def get_section_set(course_data, all_course):
-    # Sections for each course
+    """
+    Input:
+        course_data - pd.DataFrame: properly formatted course dataframe
+        all_course - set(str): set of all courses available in the optimization problem
+    Output:
+        section_course_dict dict(str: str): maps courses to all sections of that course
+    """
+
     section_course_dict = dict()
     for course_current in all_course:
         section_course_dict[course_current] = course_data[course_data['subject_course_section'] == course_current][
@@ -96,7 +103,7 @@ def get_timeslot_sets(course_data, all_section, all_timeslot):
     return timeslot_section_dictionary, section_timeslot_dictionary, timeslot_day_dictionary
 
 
-def get_room_sets(course_data, room_data, all_room, all_section):
+def get_room_sets_capacity_restricted(course_data, room_data, all_room, all_section):
     """ 
     Input:
         course_data - pd.DataFrame: properly formatted course dataframe
@@ -123,7 +130,7 @@ def get_room_sets(course_data, room_data, all_room, all_section):
                 relevant_room_for_sections = room_section_dictionary[section]
             else:
                 relevant_room_for_sections = list()
-                currently[section] = relevant_room_for_sections
+                room_section_dictionary[section] = relevant_room_for_sections
             room_capacity = room_data[room_data['bldg_room'] == room]["capacity"].iloc[0] #changed Rm Max Cap to capacity
             course_enrollment_capacity = \
             course_data[course_data['subject_course_section_occurrence'] == section]['enrollment'].iloc[0] #changed Max Enroll to enrollment
@@ -132,6 +139,50 @@ def get_room_sets(course_data, room_data, all_room, all_section):
                 relevant_room_for_sections.append(room)
         section_room_dictionary[room] = relevant_sections_for_room
     return room_section_dictionary, section_room_dictionary
+
+
+def get_room_sets(course_data, room_data, all_room, all_section):
+    """ 
+    Input:
+        course_data - pd.DataFrame: properly formatted course dataframe
+        room_data - pd.DataFrame: properly formatted room dataframe
+        all_section - set(str): set of all sections available in the optimization problem
+        all_room - set(str): set of all rooms available in the optimization problem
+    Output:
+        bldgroom_section_dictionary - dict(str, str): maps rooms to sections that may be taught in that timeslot
+        section_bldgroom_dictionary - dict(str, str): maps sections to rooms in which they may be taught
+    """
+
+    bldgroom_section_dictionary = dict()
+    section_bldgroom_dictionary = dict()
+
+    all_use = [use.replace(" ", "") for use in room_data['use'].unique()]
+    bldgroom_use_dict = {use: room_data[room_data['use']==use]['bldg_room'].tolist() for use in all_use}
+    use_section_dict = pd.Series(course_data['room_use'].values,index=course_data['subject_course_section_occurrence']).to_dict()
+    use_section_dict = {section: use.replace(" ", "").split(",") for section, use in use_section_dict.items()}
+    section_use_dict = dict()
+
+    for section, section_current_use in use_section_dict.items():
+        valid_rooms = {bldg_room for use in section_current_use for bldg_room in bldgroom_use_dict[use]}
+        bldgroom_section_dictionary[section] = valid_rooms
+        for use in section_current_use:
+            if use in section_use_dict:
+                section_use_dict[use].add(section)
+            else:
+                section_use_dict[use] = {section}
+
+    for use in all_use:
+        bldgroom_current_use = bldgroom_use_dict[use]
+        if use not in section_use_dict:
+            continue
+        section_current_use = section_use_dict[use]
+        for bldg_room in bldgroom_current_use:
+            if bldg_room in section_bldgroom_dictionary:
+                section_bldgroom_dictionary[bldg_room] = section_bldgroom_dictionary.union(set(section_current_use))
+            else:
+                section_bldgroom_dictionary[bldg_room] = set(section_current_use)
+
+    return bldgroom_section_dictionary, section_bldgroom_dictionary
 
 
 def get_room_sets_trivial(course_data, room_data, all_room, all_section):
@@ -174,6 +225,7 @@ def get_capacity_sets(room_data):
             n_rf[(k, f)] = int(v)
 
     return n_rf
+
 
 def get_size_set(section_student_dict):
     """
@@ -239,11 +291,12 @@ def generate_simple_time_intervals(min_hour=6,max_hour=20,interval_length=0.25):
 
     return(all_time_intervals)
 
-def get_sections_with_overlapping_time_slot_depricated(all_timeslot, all_section, course_data, timeinterval):
 
+def get_sections_with_overlapping_time_slot_depricated(all_timeslot, all_section, course_data, timeinterval):
     """ 
     Depricated
     """
+
     X_t_clash = dict()
     X_timeslot = dict()
 
@@ -265,9 +318,54 @@ def get_sections_with_overlapping_time_slot_depricated(all_timeslot, all_section
 
     return section_student_dictimpletime
 
+
+def pad_timeslot_str(timeslot):
+    """
+    Input:
+        timeslot - str: any timeslot value
+    Output:
+        timeslot - str: identical to input value, with a leading 0 if necessary
+                        to ensure the timeslot has a length of 4
+
+    Returns a new string, rather than changing the original string in place
+    Helper method to get_overlapping_time_slots()
+    """
+
+    if type(timeslot) is not str:
+        raise Exception("timeslot must be of type str")
+    if len(timeslot) not in {3, 4}:
+        raise Exception("timeslot read from data must have 3 or 4 digits. Ex. 900, 1300")
+    elif len(timeslot) == 3:
+        return "0" + timeslot
+    else:
+        return timeslot
+
+
+def add_to_timeslot(timeslot, minutes):
+    """
+    Input:
+        timeslot - str: any timeslot value. Must have 4 digits
+        minutes - str: 
+    Output:
+        timeslot - str: equivalent to timeslot, but with minutes added
+    """
+
+    if len(timeslot) != 4:
+        raise Exception("timeslot must have 4 digits, may need to call pad_timeslot_str")
+    if len(minutes) != 2:
+        raise Exception("minutes must have 2 digits")
+
+    total_minutes = int(timeslot[3:]) + int(minutes)
+    if total_minutes > 60:
+        adjusted_minutes = total_minutes - 60
+        total_hours = int(timeslot[:3]) + 1
+        return str(total_hours) + str(adjusted_minutes)
+    else:
+        return timeslot[:3] + str(total_minutes)
+
 def get_overlapping_time_slots(all_timeslot, current_timeslot):
 
-    """ 
+    """
     Input:
         all_timeslot - list[str]: all possible timeslots
         current_timeslot - str: timeslot currently being considered
@@ -280,12 +378,12 @@ def get_overlapping_time_slots(all_timeslot, current_timeslot):
 
     This method is intended as a helper method to get_sections_with_overlapping_time_slot()
 
-    Todo: Fix times so that times before noon are padded with a leading 0
-    It so happens that with the times we have courses running, this lingering bug 
-    does not lead to any issues, but should be fixed regardless
+    TODO: enforce 15 minute time gap between sections
     """
 
     current_dow, current_start_time, current_end_time = current_timeslot.split("_")
+    current_start_time = pad_timeslot_str(current_start_time)
+    current_end_time = pad_timeslot_str(current_end_time)
     current_dow = set(current_dow)
 
     timeslot_clash = set()
@@ -294,15 +392,17 @@ def get_overlapping_time_slots(all_timeslot, current_timeslot):
             continue
         other_dow, other_start_time, other_end_time = other_timeslot.split("_")
         other_dow = set(other_dow)
+        other_start_time = pad_timeslot_str(other_start_time)
+        other_end_time = pad_timeslot_str(other_end_time)
+        # if (len(current_dow.intersection(other_dow)) > 0) and (other_start_time < current_end_time) and (current_start_time < other_end_time):
+        if (len(current_dow.intersection(other_dow)) > 0) and (other_start_time <= current_start_time) and (current_start_time < other_end_time):
 
-        if (len(current_dow.intersection(other_dow)) > 0) and (other_start_time < current_end_time) and (current_start_time <= other_end_time):
             timeslot_clash.add(other_timeslot)
 
     return timeslot_clash
 
 
 def get_sections_with_overlapping_time_slot(all_timeslot, all_section, course_data, timeslot):
-
     """ 
     Input:
         all_timeslot - list[str]: set of all timeslots available in the optimization problem
@@ -365,6 +465,7 @@ def get_room_capacity(room_data, capacity_column='capacity'):
 
     capacity_room_dictionary = pd.Series(room_data[capacity_column].values,index=room_data['bldg_room']).to_dict()
     return capacity_room_dictionary
+
 
 def get_course_time(course_data):
     """ 
