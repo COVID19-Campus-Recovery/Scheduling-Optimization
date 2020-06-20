@@ -20,17 +20,17 @@ class RoomAssignmentOpt(GenericScheduleOpt):
         self.X = self.course_data['subject_course_section_occurrence'].tolist()
         self.R = self.room_data['bldg_room'].tolist()
         self.T = self.course_data['full_time'].unique()
-        self.TS = [t for t in self.T if len(t.split("_")[0])==1]
+        self.TS = sp.get_all_simplieid_timeslot(self.T)
         # self.timeintervals = sp.generate_simple_time_intervals()
 
         print("setting course to section set")
         self.X_c = sp.get_section_set(self.course_data, self.C)
         print("setting room to section set")
-        self.R_x, self.X_r = sp.get_room_sets_trivial(self.course_data, self.room_data,
+        self.R_x, self.X_r = sp.get_room_sets(self.course_data, self.room_data,
                                               self.R, self.X)
         print("setting time to section availability set")
         # self.X_t = sp.get_sections_with_overlapping_time_slot(self.T, self.X, self.course_data, self.timeintervals)
-        self.X_t = sp.get_sections_with_overlapping_time_slot(self.T, self.X, self.course_data, self.T)
+        self.X_t = sp.get_sections_with_overlapping_time_slot(self.T, self.TS, self.X, self.course_data)
 
         print("setting parameters")
         self.p_x = sp.get_enrollement_per_section(self.course_data,

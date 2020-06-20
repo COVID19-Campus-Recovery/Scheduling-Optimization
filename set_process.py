@@ -322,6 +322,28 @@ def get_sections_with_overlapping_time_slot_depricated(all_timeslot, all_section
 
     return section_student_dictimpletime
 
+def get_all_simplieid_timeslot(all_timeslot):
+    """
+     Input:
+        all_timeslot - list[str]: all possible timeslots
+    Output:
+        all_simplified_timeslot - list[str]: Includes one or more values for each value in all_timeslot
+            However, each value only includes dow and beginning time
+            e.g. if an entry in all_timeslot is 'M_1000_1115'
+            then the corresponding entry in all_simplified_timeslot would be 'M_1000_x'
+            Moreover, each day dow element of an entry in all_simplified_timeslot may only involve a single day
+            For example, if an entry in all_timeslot is 'MWF_13100_1400', 
+            then the corresponding entries in all_simplified_timeslot would be 'M_13100_x', 'W_13100_x', 'F_13100_x'
+    """
+
+    all_simplified_timeslot = set()
+    for timeslot in all_timeslot:
+        dow, start_time, end_time = timeslot.split("_")
+        for single_dow in dow:
+            simplified_timeslot = single_dow + "_" + start_time + "_x"
+            all_simplified_timeslot.add(simplified_timeslot)
+
+    return all_simplified_timeslot
 
 def pad_timeslot_str(timeslot):
     """
@@ -387,7 +409,7 @@ def get_overlapping_time_slots(all_timeslot, current_timeslot):
 
     current_dow, current_start_time, current_end_time = current_timeslot.split("_")
     current_start_time = pad_timeslot_str(current_start_time)
-    current_end_time = pad_timeslot_str(current_end_time)
+    # current_end_time = pad_timeslot_str(current_end_time)
     current_dow = set(current_dow)
 
     timeslot_clash = set()
@@ -406,7 +428,7 @@ def get_overlapping_time_slots(all_timeslot, current_timeslot):
     return timeslot_clash
 
 
-def get_sections_with_overlapping_time_slot(all_timeslot, all_section, course_data, timeslot):
+def get_sections_with_overlapping_time_slot(all_timeslot, all_simplified_timeslot, all_section, course_data):
     """ 
     Input:
         all_timeslot - list[str]: set of all timeslots available in the optimization problem
@@ -417,7 +439,7 @@ def get_sections_with_overlapping_time_slot(all_timeslot, all_section, course_da
     Output:
         section_timeslot_clash_dictionary - dict{str: set{str}}: All times in T are included as a key
                     The corresponding values represent the sections that conflict with the time for that section
-                    For example, X_t_clash['F_1010_1205'] will include any sections that are taught at the 
+                    For example, X_t_clash['F_1010_1205'] will include any sections that are taught at the
                     following times accourding to course_data
                     'F_1010_1205', 'F_1115_1205', or 'MWF_1010_1100'
     """
@@ -433,8 +455,8 @@ def get_sections_with_overlapping_time_slot(all_timeslot, all_section, course_da
 
     section_timeslot_clash_dictionary = dict() #stores sections that are taught a timeslot that conflicts with the given timeslot
 
-    for current_timeslot in all_timeslot:
-        all_conflicting_timeslot = get_overlapping_time_slots(all_timeslot, current_timeslot)
+    for current_timeslot in all_simplified_timeslot:
+        all_conflicting_timeslot = get_overlapping_time_slots(all_timeslot, current_timeslot) #here, current_timeslot should refer only to times from TS. But need to find timeslots from T, that conflict
         sections_conflicting = set()
         for conflicting_timeslot in all_conflicting_timeslot:
             if conflicting_timeslot in section_timeslot_dictionary:
