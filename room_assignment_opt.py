@@ -2,6 +2,7 @@ import pandas as pd
 from gurobipy import *
 from abc import ABC
 from abc import abstractmethod
+import sys
 
 import data_process as dp
 import set_process as sp
@@ -75,7 +76,41 @@ class RoomAssignmentOpt(GenericScheduleOpt):
         model.setObjective(quicksum(self.p_x[x] / self.n_r[r] * X_xr[(x, r)] for x in self.X for r in self.R_x[x]), GRB.MINIMIZE)
         return
 
-    
+    @staticmethod
+    def read_filenames(system_arguements,
+                      input_file_directory="~/Documents/Madgie_Cleaned_Directory/Data/",
+                      output_file_directory="~/Documents/Madgie_Cleaned_Directory/Output/"):
+        """
+        Input:
+            system_arguements - list[str]: should be directly from sys.argv
+            input_file_directory - str: location directory that stores all input files
+            output_file_directory - str: location directory that stores all output files.
+        Output:
+
+        """
+
+        if len(system_arguements) >= 3:
+            course_data_filename = system_arguements[1]
+            room_data_filename = system_arguements[2]
+        else:
+            course_data_filename = "room_assignment_opt_courses_example.xlsx"
+            room_data_filename = "room_assignment_opt_rooms_example.xlsx"
+
+        course_data_filepath = input_file_directory + course_data_filename
+        room_data_filepath = input_file_directory + room_data_filename
+
+        if course_data_filename.find("room_assignment_opt_courses") == 0 and room_data_filename.find("room_assignment_opt_rooms") == 0:
+            course_data_filename_suffix = course_data_filename[len("room_assignment_opt_courses_"):].split(".")[0]
+            room_data_filename_suffix = room_data_filename[len("room_assignment_opt_rooms_"):].split(".")[0]
+            output_data_filename_suffix = course_data_filename_suffix + "_" + room_data_filename_suffix
+            output_data_filename = "room_assignment_opt_output" + "_" + output_data_filename_suffix + ".csv"
+            output_data_filepath = output_file_directory + output_data_filename
+        else:
+            raise Exception("Invalid input file names")
+        print("output filepath")
+        print(output_data_filepath)
+        return course_data_filepath, room_data_filepath, output_data_filepath
+
     @staticmethod
     def output_result(
         model = None,
@@ -129,7 +164,7 @@ class RoomAssignmentOpt(GenericScheduleOpt):
         output["Subject Code"] = temp[0]
         output["Course Code"] = temp[1]
         output["Course Section"] = temp[2].astype(str).str[:-1]
-        
+
         #TODO:
         if occurrence:
             pass
@@ -145,12 +180,10 @@ class RoomAssignmentOpt(GenericScheduleOpt):
         output.to_csv(output_path,index = False)
 
 
-
 if __name__ == "__main__":
 
-    #load data
-    course_data_filepath = "~/Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_courses_example.xlsx"
-    room_data_filepath = "~/Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_rooms_example.xlsx"
+    course_data_filepath, room_data_filepath, output_data_filepath = RoomAssignmentOpt.read_filenames(sys.argv)
+
     course_data = dp.clean_course_data(course_data_filepath)
     room_data = dp.clean_room_data(room_data_filepath)
 
@@ -163,4 +196,5 @@ if __name__ == "__main__":
     #solve model
     model.optimize()
 
-    RoomAssignmentOpt.output_result(model=model)
+    RoomAssignmentOpt.output_result(model=model,
+                                    output_path = output_data_filepath)
