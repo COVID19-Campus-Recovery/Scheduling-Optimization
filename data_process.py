@@ -72,7 +72,8 @@ def read_data(filepath, required_columns, optional_columns=None):
     if optional_columns is not None:
         for col in optional_columns:
             if col not in df.columns:
-                warnings.warn("Input data was missing optional column: " + str(col) + ". Some functionality may be missing")
+                warning_str = "Input data was missing optional column: " + str(col) + ". Some functionality may be missing"
+                warnings.warn(warning_str)
 
     return df
 
@@ -161,6 +162,9 @@ def separate_online_courses(course_data):
     course_data_exclusively_online = course_data[course_data["exclusively_online"]==1]
 
     return course_data, course_data_exclusively_online
+
+def separate_online_courses_by_capacity(course_data, weeks_in_semester, minimum_class_days):
+    pass
 
 def clean_room_data(filepath):
     """

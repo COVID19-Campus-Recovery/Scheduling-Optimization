@@ -498,9 +498,23 @@ def get_course_time(course_data):
     Input:
         course_data - pd.DataFrame: properly formatted course dataframe
     Output:
-        timeslot_section_dictionary - dict{str: str}: maps a section to it's timeslot, according to course_data
+        timeslot_section_dictionary - dict{str: str}: maps a section to its timeslot, according to course_data
     """
 
     timeslot_section_dictionary = pd.Series(course_data["full_time"].values,index=course_data['subject_course_section_occurrence']).to_dict()
     return timeslot_section_dictionary
 
+
+def get_num_weekly_meetings_days(timeslot_section_dictionary):
+    """
+    Input:
+        timeslot_section_dictionary - dict{str: str}: maps a section to its timeslot
+    Output:
+        meeting_days_section_dictionary - dict{str: str}: maps a section to the number of days a week it meets
+    """
+
+    num_weekly_meeting_days_section_dictionary = {section: len(timeslot.split("_")[0]) for section, timeslot in timeslot_section_dictionary.items()}
+    return num_weekly_meeting_days_section_dictionary
+
+def get_weekly_hours_section_dictionary(timeslot_section_dictionary):
+    pass
