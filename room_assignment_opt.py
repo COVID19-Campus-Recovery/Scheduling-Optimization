@@ -154,9 +154,9 @@ class RoomAssignmentOpt(GenericScheduleOpt):
         final_output.rename(columns={"use": 'Room Use'}, inplace=True)
         final_output = final_output[["subject_code", "course_number", "course_section", "Bldg_room",
                                      "enrollment", "capacity", "days", "begin_time", "end_time",
-                                     "exclusively_online", "Room Use"]]
+                                     "exclusively_online", "Room Use", "crn", "contact_hours"]]
         final_output.columns = ["Subject Code", "Course Number", "Course Section", "bldg_room", "Enrollment",
-                                "capacity", "Days", "Begin Time", "End Time", "Eclusively Online", "Room Use"]
+                                "capacity", "Days", "Begin Time", "End Time", "Eclusively Online", "Room Use", "crn", "Conatct Hours"]
 
         # save
         final_output.to_csv(output_path, index=False)
