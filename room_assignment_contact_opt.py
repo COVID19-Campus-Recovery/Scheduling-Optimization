@@ -12,18 +12,30 @@ class RoomAssignmentContactyOpt(RoomAssignmentOpt):
     
     model_description = "contact_max"
 
-    def __init__(self, course_data, room_data, minimum_course_meeting_days, weeks_in_semester):
+    def __init__(self, course_data, room_data, minimum_section_contact_days, weeks_in_semester):
         super().__init__()
-        self.course_data, self.course_data_exclusively_online = dp.separate_online_courses_by_capacity(course_data) #need to implement
+        self.course_data, self.course_data_exclusively_online = dp.separate_online_courses(course_data) #need to implement
         self.room_data = room_data
-        self.minimum_course_meeting_days = minimum_course_meeting_days
+        self.minimum_section_contact_days = minimum_section_contact_days
         self.weeks_in_semester = weeks_in_semester
         return
 
+
     def get_all_sets_params(self):
         super().get_all_sets_params()
-        self.weekly_hours_section_dictionary = sp.get_weekly_hours_section_dictionary(self.timeslot_section_dictionary) #need to implement
         self.num_weekly_meeting_days_section_dictionary = sp.get_num_weekly_meeting_days(self.timeslot_section_dictionary)
+        self.meeting_hours_section_dictionary = sp.get_meeting_hours(self.timeslot_section_dictionary)
+        self.total_contact_hours_section_room_dict, self.delivery_mode_section_dict = sp.get_contact_hours(all_section=self.all_section,
+                                                                                                          all_room=self.all_room,
+                                                                                                          capacity_room_dictionary=self.capacity_room_dictionary,
+                                                                                                          enrollment_section_dictionary=self.enrollment_section_dictionary,
+                                                                                                          meeting_hours_section_dictionary=self.meeting_hours_section_dictionary,
+                                                                                                          num_weekly_meeting_days_section_dictionary=self.num_weekly_meeting_days_section_dictionary,
+                                                                                                          minimum_section_contact_days=self.minimum_section_contact_days,
+                                                                                                          weeks_in_semester=self.weeks_in_semester
+                                                                                                          )
+        self.priority_boost_section_dict = sp.get_priority_boost(self.course_data,
+                                                                self.all_section)
 
     def set_model_constrs(self, model, model_vars):
         print("setting model constraints")
@@ -39,42 +51,52 @@ class RoomAssignmentContactyOpt(RoomAssignmentOpt):
 
         return
 
+
     def set_objective(self, model, model_vars):
         print("setting objective")
         X_xr = model_vars["X_xr"]
-        model.setObjective(quicksum(self.get_contact_hours(section, room) * self.enrollment_section_dictionary[section] * X_xr[(section, room)] \
-                           for section in self.all_section for room in self.room_section_dictionary[section]), GRB.MINIMIZE)
+        model.setObjective(quicksum(self.total_contact_hours_section_room_dict[section, room] * self.enrollment_section_dictionary[section] * self.priority_boost_section_dict[section] * X_xr[(section, room)] \
+                           for section in self.all_section for room in self.room_section_dictionary[section]), GRB.MAXIMIZE)
         return
 
-    @staticmethod
-    def get_contact_hours(section, room):
-        pass
 
-    @staticmethod
-    def read_filenames(system_arguements):
+    @classmethod
+    def read_filenames(cls, system_arguements):
 
         if len(system_arguements) < 6:
             raise Exception("""RoomAssignmentContactyOpt model requires all of the following commandline arguments: 
-                            course_data_filename, room_data_filename, output_file_directory, minimum_course_meeting_days, weeks_in_semester""")
+                            course_data_filename, room_data_filename, output_file_directory, minimum_section_contact_days, weeks_in_semester""")
 
-        course_data_filepath, room_data_filepath, output_data_filepath = super().read_filenames(system_arguements,
-                                                                                                input_file_directory,
-                                                                                                output_file_directory)
+        course_data_filepath, room_data_filepath, output_data_filepath = super().read_filenames(system_arguements)
 
-        minimum_course_meeting_days = system_arguements[4]
+        minimum_section_contact_days = system_arguements[4]
         weeks_in_semester = system_arguements[5]
 
-        return course_data_filepath, room_data_filepath, output_data_filepath, minimum_course_meeting_days, weeks_in_semester
+        return course_data_filepath, room_data_filepath, output_data_filepath, minimum_section_contact_days, weeks_in_semester
+
+
+
 
 if __name__ == "__main__":
 
-    course_data_filepath, room_data_filepath, output_data_filepath, minimum_course_meeting_days, weeks_in_semester = RoomAssignmentContactyOpt.read_filenames(sys.argv)
+    if len(sys.argv) < 6:
+        system_arguements = [sys.argv[0],
+                            "/Users/mehrannavabi/Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_courses_full_enrollment_2019.xlsx",
+                            "/Users/mehrannavabi/Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_rooms_20_percent_social_distance.xlsx",
+                            "/Users/mehrannavabi/Documents/Madgie_Cleaned_Directory/Output",
+                            5,
+                            12]
+    else:
+        system_arguements = sys.argv
+        print()
+
+    course_data_filepath, room_data_filepath, output_data_filepath, minimum_section_contact_days, weeks_in_semester = RoomAssignmentContactyOpt.read_filenames(system_arguements)
 
     course_data = dp.clean_course_data(course_data_filepath)
     room_data = dp.clean_room_data(room_data_filepath)
 
     #generate model
-    assign_opt = RoomAssignmentContactyOpt(course_data, room_data, minimum_course_meeting_days, weeks_in_semester)
+    assign_opt = RoomAssignmentContactyOpt(course_data, room_data, minimum_section_contact_days, weeks_in_semester)
     model = assign_opt.construct_model()
     model.update()
     model.printStats()
@@ -83,7 +105,7 @@ if __name__ == "__main__":
     model.optimize()
 
     RoomAssignmentContactyOpt.output_result(course_data=course_data,
-                                        room_data=room_data,
-                                        model=model,
-                                        output_path = output_data_filepath,
-                                        )
+                                           room_data=room_data,
+                                           model=model,
+                                           output_path = output_data_filepath,
+                                           )

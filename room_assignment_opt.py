@@ -78,16 +78,17 @@ class RoomAssignmentOpt(GenericScheduleOpt):
 
         course_data_filename = course_data_filepath.split("/")[-1]
         room_data_filename = room_data_filepath.split("/")[-1]
-        if course_data_filename.find("room_assignment_opt_courses") == 0 and room_data_filename.find("room_assignment_opt_rooms") == 0:
+        if course_data_filename.find("room_assignment_opt_course") == 0 and room_data_filename.find("room_assignment_opt_room") == 0:
             course_data_filename_suffix = course_data_filename[len("room_assignment_opt_courses_"):].split(".")[0]
             room_data_filename_suffix = room_data_filename[len("room_assignment_opt_rooms_"):].split(".")[0]
             output_data_filename_suffix = course_data_filename_suffix + "_" + room_data_filename_suffix
             output_data_filename = "room_assignment_opt_output" + "_" + output_data_filename_suffix + "_" + cls.model_description + ".csv"
-            output_data_filepath = output_file_directory + output_data_filename
+            output_data_filepath = output_file_directory + "/" + output_data_filename
         else:
             raise Exception("Invalid input file names")
 
         return course_data_filepath, room_data_filepath, output_data_filepath
+
 
     @staticmethod
     def output_result(

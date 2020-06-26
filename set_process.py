@@ -1,3 +1,4 @@
+from math import floor
 import numpy as np
 import pandas as pd
 
@@ -345,7 +346,7 @@ def get_all_simplieid_timeslot(all_timeslot):
 
     return all_simplified_timeslot
 
-def pad_timeslot_str(timeslot):
+def pad_time_str(timeslot):
     """
     Input:
         timeslot - str: any timeslot value
@@ -354,7 +355,7 @@ def pad_timeslot_str(timeslot):
                         to ensure the timeslot has a length of 4
 
     Returns a new string, rather than changing the original string in place
-    Helper method to get_overlapping_time_slots()
+    Helper method to get_overlapping_time_slots() and potential other methods used to manipulate timeslots
     """
 
     if type(timeslot) is not str:
@@ -377,7 +378,7 @@ def add_to_timeslot(timeslot, minutes):
     """
 
     if len(timeslot) != 4:
-        raise Exception("timeslot must have 4 digits, may need to call pad_timeslot_str")
+        raise Exception("timeslot must have 4 digits, may need to call pad_time_str")
     if len(minutes) != 2:
         raise Exception("minutes must have 2 digits")
 
@@ -408,8 +409,8 @@ def get_overlapping_time_slots(all_timeslot, current_timeslot):
     """
 
     current_dow, current_start_time, current_end_time = current_timeslot.split("_")
-    current_start_time = pad_timeslot_str(current_start_time)
-    # current_end_time = pad_timeslot_str(current_end_time)
+    current_start_time = pad_time_str(current_start_time)
+    # current_end_time = pad_time_str(current_end_time)
     current_dow = set(current_dow)
 
     timeslot_clash = set()
@@ -418,8 +419,8 @@ def get_overlapping_time_slots(all_timeslot, current_timeslot):
             continue
         other_dow, other_start_time, other_end_time = other_timeslot.split("_")
         other_dow = set(other_dow)
-        other_start_time = pad_timeslot_str(other_start_time)
-        other_end_time = pad_timeslot_str(other_end_time)
+        other_start_time = pad_time_str(other_start_time)
+        other_end_time = pad_time_str(other_end_time)
         # if (len(current_dow.intersection(other_dow)) > 0) and (other_start_time < current_end_time) and (current_start_time < other_end_time):
         if (len(current_dow.intersection(other_dow)) > 0) and (other_start_time <= current_start_time) and (current_start_time < other_end_time):
 
@@ -486,7 +487,7 @@ def get_room_capacity(room_data, capacity_column='capacity'):
     Input:
         room_data - pd.DataFrame: properly formatted room dataframe
     Output:
-        enrollment_section_dict - dict{str: str}: maps a section to it's enrollment, according to room_data
+        capacity_room_dictionary - dict{str: str}: maps a room to it's capacity, according to room_data
     """
 
     capacity_room_dictionary = pd.Series(room_data[capacity_column].values,index=room_data['bldg_room']).to_dict()
@@ -505,7 +506,7 @@ def get_course_time(course_data):
     return timeslot_section_dictionary
 
 
-def get_num_weekly_meetings_days(timeslot_section_dictionary):
+def get_num_weekly_meeting_days(timeslot_section_dictionary):
     """
     Input:
         timeslot_section_dictionary - dict{str: str}: maps a section to its timeslot
@@ -516,5 +517,155 @@ def get_num_weekly_meetings_days(timeslot_section_dictionary):
     num_weekly_meeting_days_section_dictionary = {section: len(timeslot.split("_")[0]) for section, timeslot in timeslot_section_dictionary.items()}
     return num_weekly_meeting_days_section_dictionary
 
-def get_weekly_hours_section_dictionary(timeslot_section_dictionary):
-    pass
+
+def get_section_room_assignment(output_data):
+    """
+    Input:
+        output_data - pd.DataFrame: properly formatted output dataframe from a room_assignment model
+    Output:
+        room_section_dict - dict{str: str}: maps a section to its assigned room
+    """
+
+    room_section_dict = pd.Series(output_data["bldg_room"].values,index=output_data['subject_course_section_occurrence']).to_dict()
+    return room_section_dict
+
+
+def get_weekly_hours(course_data):
+    """ 
+    Input:
+        course_data - pd.DataFrame: properly formatted course dataframe
+    Output:
+        weekly_hours_section_dictionary - dict{str: str}: maps a section to the number of weekly hours the section meets
+    """
+
+    weekly_hours_section_dictionary = pd.Series(course_data["contact_hours"].values,index=course_data['subject_course_section_occurrence']).to_dict()
+    return weekly_hours_section_dictionary
+
+
+def get_timeslot_duration(timeslot):
+    """ 
+    Input:
+        timeslot - str: full timeslot information, formatted as "DOW_starttime_endtime"
+    Output:
+        duration_hours - float: the duration of the timeslot for a single meeting day
+            e.g. if timeslot = "MWF_1000_1115", then duration_hours = 1.25
+            if timeslot = "F_1300_1445", then duration_hours = 1.75
+    Intended as a helper function to get_meeting_hours
+    """
+    dow, start_time, end_time = timeslot.split("_")
+    start_time = pad_time_str(start_time)
+    end_time = pad_time_str(end_time)
+    duration_hours = (int(end_time[:2]) - int(start_time[:2])) + (int(end_time[2:]) - int(start_time[2:]))/60
+    if duration_hours < 0:
+        raise Exception("duration hours neg: " + str(timeslot) + " " + start_time + " " + end_time)
+    elif duration_hours > 8:
+        raise Exception("duration hours large: " + str(timeslot) + " " + start_time + " " + end_time)
+    return duration_hours
+
+def get_meeting_hours(timeslot_section_dictionary):
+    """
+    Input:
+        timeslot_section_dictionary - dict{str: str}: maps a section to its timeslot
+    Output:
+        meeting_hours_section_dictionary - dict{str: str}: maps a section to the number of hours it meets, on any day it meetings
+    """
+    #this is not correct:
+    meeting_hours_section_dictionary = {section: get_timeslot_duration(timeslot) for section, timeslot in timeslot_section_dictionary.items()}
+    return meeting_hours_section_dictionary
+
+
+def get_contact_hours(all_section,
+                      all_room,
+                      capacity_room_dictionary,
+                      enrollment_section_dictionary,
+                      meeting_hours_section_dictionary,
+                      num_weekly_meeting_days_section_dictionary,
+                      minimum_section_contact_days,
+                      weeks_in_semester):
+    """
+    Input:
+        all_section - set(str): set of all sections available in the optimization problem
+        all_room - set(str): set of all rooms available in the optimization problem
+        capacity_room_dictionary -  dict{str: str}: maps a room to it's capacity 
+        enrollment_section_dictionary - dict{str: str}: maps a section to it's enrollment
+        meeting_hours_section_dictionary - dict{str: str}: maps a section to its the number of hours it meets, on any day it meetings
+        num_weekly_meeting_days_section_dictionary -  dict{str: int}: maps a section to the number of days a week it meets
+        minimum_section_contact_days - int: minimum number of days any section must meet in person, in a semester
+        weeks_in_semester - int: number of weeks in the semester; it's assumed these are full weeks
+    Output:
+        total_contact_hours_section_room_dict - dict{str: str}: maps a section and room to the contact hours the section would have, if it were assigned to the given room
+        delivery_mode_section_dict - dict{str: str}: maps a section and room to the delivery mode that the section must take, it's to be taught in that room
+        
+    """
+
+    total_contact_hours_section_room_dict = dict()
+    delivery_mode_section_dict = dict()
+    for section in all_section:
+        for room in all_room:
+            total_contact_hours, delivery_mode = get_contact_hours_helper(capacity=capacity_room_dictionary[room],
+                                                                          enrollment=enrollment_section_dictionary[section],
+                                                                          meeting_hours=meeting_hours_section_dictionary[section],
+                                                                          weekly_meeting_days=num_weekly_meeting_days_section_dictionary[section],
+                                                                          minimum_section_contact_days=minimum_section_contact_days,
+                                                                          weeks_in_semester=weeks_in_semester)
+            total_contact_hours_section_room_dict[section, room] = total_contact_hours
+            delivery_mode_section_dict[section, room] = delivery_mode
+
+    return total_contact_hours_section_room_dict, delivery_mode_section_dict
+
+
+def get_contact_hours_helper(capacity,
+                            enrollment,
+                            meeting_hours,
+                            weekly_meeting_days,
+                            minimum_section_contact_days,
+                            weeks_in_semester):
+    """
+    Input:
+        capacity - int: capacity for the room on interest
+        enrollment - int: enrollment for the section of interest
+        meeting_hours - float: the number of hours the section of interest meetings, on any day it meeints
+        weekly_meeting_days - int: number of days a week the section of interet meets
+    Output:
+        contact_hours - float: number of contact hours for the section of interest if it is scheduled in the room of interest
+        delivery_mode -  str: delivery mode that the section must take, it's to be taught in that room
+                              possible values are: "residential_spread", "hybrid_split", "hybrid_touchpoint", "remote"
+
+    Inteneded as a helper method to get_contact_hours.
+    All input paramters are specific to a given room and section.
+    """
+
+    if enrollment <= capacity:
+        return meeting_hours * weekly_meeting_days, "residential_spread"
+    elif enrollment <= weekly_meeting_days * capacity:
+        for limited_weekly_meeting_days in [2, weekly_meeting_days + 1]:
+            if enrollment < limited_weekly_meeting_days * capacity:
+                contact_days_per_week = weekly_meeting_days - limited_weekly_meeting_days + 1
+                contact_hours = meeting_hours * contact_days_per_week
+                return contact_hours, "hybrid_split_" + str(contact_days_per_week)
+    elif enrollment <= weeks_in_semester * weekly_meeting_days * capacity / minimum_section_contact_days:
+        avg_contact_days_per_week = floor(weeks_in_semester * weekly_meeting_days * capacity / enrollment) / weeks_in_semester
+        contact_hours = meeting_hours * avg_contact_days_per_week
+        return contact_hours, "hybrid_touchpoint_" + str(avg_contact_days_per_week)
+    else:
+        return 0, "remote"
+
+
+def get_priority_boost(course_data,
+                      all_section):
+    """
+    Input:
+        course_data - pd.DataFrame: properly formatted course dataframe
+        all_section - set(str): set of all sections available in the optimization problem
+    Output:
+        priority_boost_section_dict - dict{str: float}: maps each section to the priority of that section
+
+    The priority of a section is used as a weighting factor in the objective function of the room_assignment_contact_opt model
+    This model maximizes total contact hours. The contact hours of a section will then be weighted by priority_boost_section_dict
+    """
+
+    if "priotity_boost" in course_data.columns:
+        priority_boost_section_dict = pd.Series(course_data["priotity_boost"].values,index=course_data['subject_course_section_occurrence']).to_dict()
+    else:
+        priority_boost_section_dict = {section: 1 for section in all_section}
+    return priority_boost_section_dict
