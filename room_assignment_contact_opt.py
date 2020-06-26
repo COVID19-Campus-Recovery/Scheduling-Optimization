@@ -14,7 +14,7 @@ class RoomAssignmentContactyOpt(RoomAssignmentOpt):
 
     def __init__(self, course_data, room_data, minimum_section_contact_days, weeks_in_semester):
         super().__init__()
-        self.course_data, self.course_data_exclusively_online = dp.separate_online_courses(course_data) #need to implement
+        self.course_data, self.course_data_exclusively_online = dp.separate_online_courses(course_data)
         self.room_data = room_data
         self.minimum_section_contact_days = minimum_section_contact_days
         self.weeks_in_semester = weeks_in_semester
@@ -37,6 +37,18 @@ class RoomAssignmentContactyOpt(RoomAssignmentOpt):
         self.priority_boost_section_dict = sp.get_priority_boost(self.course_data,
                                                                 self.all_section)
 
+        # I could actually redefine room_section_dictionary and section_room_dictionary to exclude section room combinations that must be remote for capacity reasons
+
+    def set_model_vars(self, model):
+        print("defining variables")
+        X_xr = {}
+        for section in self.all_section:
+            for room in self.room_section_dictionary[section]:
+                X_xr[(section, room)] = model.addVar(vtype=GRB.BINARY, name='X_xr[%s+%s]' % (section, room))
+
+        model_vars = {"X_xr": X_xr}
+        return model_vars
+
     def set_model_constrs(self, model, model_vars):
         print("setting model constraints")
         X_xr = model_vars["X_xr"]
@@ -56,7 +68,8 @@ class RoomAssignmentContactyOpt(RoomAssignmentOpt):
         print("setting objective")
         X_xr = model_vars["X_xr"]
         model.setObjective(quicksum(self.total_contact_hours_section_room_dict[section, room] * self.enrollment_section_dictionary[section] * self.priority_boost_section_dict[section] * X_xr[(section, room)] \
-                           for section in self.all_section for room in self.room_section_dictionary[section]), GRB.MAXIMIZE)
+                           for section in self.all_section for room in self.room_section_dictionary[section]),
+                        GRB.MAXIMIZE)
         return
 
 
@@ -79,18 +92,7 @@ class RoomAssignmentContactyOpt(RoomAssignmentOpt):
 
 if __name__ == "__main__":
 
-    if len(sys.argv) < 6:
-        system_arguements = [sys.argv[0],
-                            "/Users/mehrannavabi/Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_courses_full_enrollment_2019.xlsx",
-                            "/Users/mehrannavabi/Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_rooms_20_percent_social_distance.xlsx",
-                            "/Users/mehrannavabi/Documents/Madgie_Cleaned_Directory/Output",
-                            5,
-                            12]
-    else:
-        system_arguements = sys.argv
-        print()
-
-    course_data_filepath, room_data_filepath, output_data_filepath, minimum_section_contact_days, weeks_in_semester = RoomAssignmentContactyOpt.read_filenames(system_arguements)
+    course_data_filepath, room_data_filepath, output_data_filepath, minimum_section_contact_days, weeks_in_semester = RoomAssignmentContactyOpt.read_filenames(sys.argv)
 
     course_data = dp.clean_course_data(course_data_filepath)
     room_data = dp.clean_room_data(room_data_filepath)
