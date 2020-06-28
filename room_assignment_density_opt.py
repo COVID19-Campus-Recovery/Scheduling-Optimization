@@ -11,6 +11,7 @@ from room_assignment_opt import RoomAssignmentOpt
 class RoomAssignmentDensityOpt(RoomAssignmentOpt):
     
     model_description = "density_min"
+    informative_output_columns = ["subject_code", "course_number", "course_section", "bldg_room"]
 
     def __init__(self, course_data, room_data):
         super().__init__()
@@ -56,7 +57,7 @@ if __name__ == "__main__":
     #solve model
     model.optimize()
 
-    RoomAssignmentDensityOpt.output_result(course_data=course_data,
+    assign_opt.output_result(course_data=course_data,
                                         room_data=room_data,
                                         model=model,
                                         output_path = output_data_filepath,

@@ -1,4 +1,5 @@
 import pandas as pd
+import csv
 from gurobipy import *
 from abc import ABC
 from abc import abstractmethod
@@ -12,7 +13,8 @@ from generic_schedule_opt import GenericScheduleOpt
 class RoomAssignmentOpt(GenericScheduleOpt):
     
     model_description = "generic_room_assignment"
-
+    informative_output_columns = ["subject_code", "course_number", "course_section", "bldg_room"]
+    
     def __init__(self):
         super().__init__()
         return
@@ -89,9 +91,13 @@ class RoomAssignmentOpt(GenericScheduleOpt):
 
         return course_data_filepath, room_data_filepath, output_data_filepath
 
+    @abstractmethod
+    def get_additional_output_columns(self, output):
+        pass
 
-    @staticmethod
+    # @classmethod
     def output_result(
+            self,
             course_data,
             room_data,
             model=None,
@@ -123,7 +129,6 @@ class RoomAssignmentOpt(GenericScheduleOpt):
                     solution[v.varName] = v.x
 
         elif isinstance(model, str):
-            import csv
             with open(file=model, newline='\n') as csvfile:
                 reader = csv.reader((line.replace('  ', ' ') for line in csvfile), delimiter=' ')
                 next(reader)  # skip header
@@ -144,19 +149,24 @@ class RoomAssignmentOpt(GenericScheduleOpt):
         temp = output[0].str.split("_", expand=True)
         output["Building"] = output[1].str.extract(r'^(.+?)_')
         output["Room"] = output[1].str.extract(r'[^_]*_(.*)')
-        output.rename(columns={0: 'subject_course_section_occurrence', 1: 'Bldg_room'}, inplace=True)
+        output.rename(columns={0: 'subject_course_section_occurrence', 1: 'bldg_room'}, inplace=True)
+
 
         # Merge optimization result with input data
-        final_output = pd.merge(output, course_data, how='left', left_on=["subject_course_section_occurrence"],
+        # final_output = pd.merge(output, course_data, how='left', left_on=["subject_course_section_occurrence"],
+        #                         right_on=["subject_course_section_occurrence"])
+        final_output = pd.merge(course_data, output, how='left', left_on=["subject_course_section_occurrence"],
                                 right_on=["subject_course_section_occurrence"])
-        final_output = pd.merge(final_output, room_data, how="left", left_on="Bldg_room", right_on="bldg_room")
+        final_output = pd.merge(final_output, room_data, how="left", left_on="bldg_room", right_on="bldg_room")
         # final_output = pd.merge(final_output,room_data, how = "left", left_on ="Bldg_room",right_on = "bldg_room")
+        final_output = self.get_additional_output_columns(final_output)
         final_output.rename(columns={"use": 'Room Use'}, inplace=True)
-        final_output = final_output[["subject_code", "course_number", "course_section", "Bldg_room",
-                                     "enrollment", "capacity", "days", "begin_time", "end_time",
-                                     "exclusively_online", "Room Use", "crn", "contact_hours"]]
-        final_output.columns = ["Subject Code", "Course Number", "Course Section", "bldg_room", "Enrollment",
-                                "capacity", "Days", "Begin Time", "End Time", "Eclusively Online", "Room Use", "crn", "Conatct Hours"]
+        columns_to_keep = self.informative_output_columns + ["enrollment", "capacity", "days", "begin_time", "end_time",
+                                     "exclusively_online", "Room Use", "crn", "contact_hours"]
+        final_output = final_output[columns_to_keep]
+
+        # final_output.columns = ["Subject Code", "Course Number", "Course Section", "bldg_room", "Enrollment",
+        #                         "capacity", "Days", "Begin Time", "End Time", "Eclusively Online", "Room Use", "crn", "Conatct Hours"]
 
         # save
         final_output.to_csv(output_path, index=False)
@@ -177,7 +187,7 @@ if __name__ == "__main__":
     #solve model
     model.optimize()
 
-    RoomAssignmentOpt.output_result(course_data=course_data,
+    assign_opt.output_result(course_data=course_data,
                                     room_data=room_data,
                                     model=model,
                                     output_path = output_data_filepath,
