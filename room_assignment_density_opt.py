@@ -33,6 +33,13 @@ class RoomAssignmentDensityOpt(RoomAssignmentOpt):
 
         return
 
+    def get_additional_output_columns(self, output):
+        """
+        TODO: I would actually live to return 'delivery_mode' and 'in_person_hours' in the output file for this model as well. The design surrounding this method is currently 
+        not very clean as I'm deciding the best way to calculate and output these metrics.
+        """
+        return output
+
     def set_objective(self, model, model_vars):
         print("setting objective")
         X_xr = model_vars["X_xr"]
