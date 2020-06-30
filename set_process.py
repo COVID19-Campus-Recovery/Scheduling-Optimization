@@ -190,6 +190,39 @@ def get_room_sets(course_data, room_data, all_room, all_section):
     return bldgroom_section_dictionary, section_bldgroom_dictionary
 
 
+def remove_remote_rooms_availability(bldgroom_section_dictionary,
+                                    section_bldgroom_dictionary,
+                                    delivery_mode_section_room_dict):
+
+    """ 
+    Input:
+        bldgroom_section_dictionary - dict(str, str): maps rooms to sections that may be taught in that timeslot
+        section_bldgroom_dictionary - dict(str, str): maps sections to rooms in which they may be taught
+        delivery_mode_section_room_dict - dict{str: str}: maps a section and room to the delivery mode that the section must take, it's to be taught in that room
+            If the value for a (section, room) pair is "remote", it simply means the section may not be taught in that room
+    Output:
+        bldgroom_section_dictionary - dict(str, str): maps rooms to sections that may be taught in that timeslot
+        section_bldgroom_dictionary - dict(str, str): maps sections to rooms in which they may be taught
+  
+    If the value for a (section, room) pair is "remote", then those sections and rooms should not be compatible according to bldgroom_section_dictionary and section_bldgroom_dictionary
+    This method is intended to be used in room_assignment_contact_opt, after the initial bldgroom_section_dictionary and section_bldgroom_dictionary are created
+    Using this method is not essential, but will reduce the complexity of the model
+    """
+
+    for section, available_room in bldgroom_section_dictionary.items():
+        available_room_list = list(available_room)
+        for room in available_room_list:
+            if delivery_mode_section_room_dict[section, room] == 'remote':
+                available_room.remove(room)
+
+    for room, available_section in section_bldgroom_dictionary.items():
+        available_section_list = list(available_section)
+        for section in available_section_list:
+            if delivery_mode_section_room_dict[section, room] == 'remote':
+                available_section.remove(section)
+
+    return bldgroom_section_dictionary, section_bldgroom_dictionary
+
 def get_room_sets_trivial(course_data, room_data, all_room, all_section):
     """ 
     Input:
@@ -410,20 +443,15 @@ def get_overlapping_time_slots(all_timeslot, current_timeslot):
 
     current_dow, current_start_time, current_end_time = current_timeslot.split("_")
     current_start_time = pad_time_str(current_start_time)
-    # current_end_time = pad_time_str(current_end_time)
     current_dow = set(current_dow)
-
     timeslot_clash = set()
+
     for other_timeslot in all_timeslot:
-        if type(other_timeslot) is float:
-            continue
         other_dow, other_start_time, other_end_time = other_timeslot.split("_")
         other_dow = set(other_dow)
         other_start_time = pad_time_str(other_start_time)
         other_end_time = pad_time_str(other_end_time)
-        # if (len(current_dow.intersection(other_dow)) > 0) and (other_start_time < current_end_time) and (current_start_time < other_end_time):
         if (len(current_dow.intersection(other_dow)) > 0) and (other_start_time <= current_start_time) and (current_start_time < other_end_time):
-
             timeslot_clash.add(other_timeslot)
 
     return timeslot_clash
@@ -562,6 +590,7 @@ def get_timeslot_duration(timeslot):
         raise Exception("duration hours large: " + str(timeslot) + " " + start_time + " " + end_time)
     return duration_hours
 
+
 def get_meeting_hours(timeslot_section_dictionary):
     """
     Input:
@@ -594,12 +623,12 @@ def get_contact_hours(all_section,
         weeks_in_semester - int: number of weeks in the semester; it's assumed these are full weeks
     Output:
         total_contact_hours_section_room_dict - dict{str: str}: maps a section and room to the contact hours the section would have, if it were assigned to the given room
-        delivery_mode_section_dict - dict{str: str}: maps a section and room to the delivery mode that the section must take, it's to be taught in that room
+        delivery_mode_section_room_dict - dict{str: str}: maps a section and room to the delivery mode that the section must take, it's to be taught in that room
         
     """
 
     total_contact_hours_section_room_dict = dict()
-    delivery_mode_section_dict = dict()
+    delivery_mode_section_room_dict = dict()
     for section in all_section:
         for room in all_room:
             total_contact_hours, delivery_mode = get_contact_hours_helper(capacity=capacity_room_dictionary[room],
@@ -609,9 +638,9 @@ def get_contact_hours(all_section,
                                                                           minimum_section_contact_days=minimum_section_contact_days,
                                                                           weeks_in_semester=weeks_in_semester)
             total_contact_hours_section_room_dict[section, room] = total_contact_hours
-            delivery_mode_section_dict[section, room] = delivery_mode
+            delivery_mode_section_room_dict[section, room] = delivery_mode
 
-    return total_contact_hours_section_room_dict, delivery_mode_section_dict
+    return total_contact_hours_section_room_dict, delivery_mode_section_room_dict
 
 
 def get_contact_hours_helper(capacity,
@@ -642,11 +671,11 @@ def get_contact_hours_helper(capacity,
             if enrollment < limited_weekly_meeting_days * capacity:
                 contact_days_per_week = weekly_meeting_days - limited_weekly_meeting_days + 1
                 contact_hours = meeting_hours * contact_days_per_week
-                return contact_hours, "hybrid_split_" + str(contact_days_per_week)
+                return contact_hours, "hybrid_split"
     elif enrollment <= weeks_in_semester * weekly_meeting_days * capacity / minimum_section_contact_days:
         avg_contact_days_per_week = floor(weeks_in_semester * weekly_meeting_days * capacity / enrollment) / weeks_in_semester
         contact_hours = meeting_hours * avg_contact_days_per_week
-        return contact_hours, "hybrid_touchpoint_" + str(avg_contact_days_per_week)
+        return contact_hours, "hybrid_touchpoint"
     else:
         return 0, "remote"
 
