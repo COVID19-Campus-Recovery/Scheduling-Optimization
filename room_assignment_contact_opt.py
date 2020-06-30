@@ -116,8 +116,8 @@ if __name__ == "__main__":
 
     course_data_filepath, room_data_filepath, output_data_filepath, minimum_section_contact_days, weeks_in_semester = RoomAssignmentContactyOpt.read_filenames(system_arguements)
 
-    course_data = dp.clean_course_data(course_data_filepath)
-    room_data = dp.clean_room_data(room_data_filepath)
+    course_data = dp.read_and_clean_course_data(course_data_filepath)
+    room_data = dp.read_and_clean_room_data(room_data_filepath)
 
     #generate model
     assign_opt = RoomAssignmentContactyOpt(course_data, room_data, minimum_section_contact_days, weeks_in_semester)

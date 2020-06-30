@@ -23,6 +23,17 @@ course_columns = [
     'Course 12 Subject Code_Course#_Section_CRN_Credits'
 ]
 
+def get_all_courses(course_data):
+    return course_data['subject_course_section'].unique().tolist()
+
+def get_all_sections(course_data):
+    return course_data['subject_course_section_occurrence'].tolist()
+
+def get_all_rooms(room_data):
+    return room_data['bldg_room'].unique().tolist()
+
+def get_all_timeslots(course_data):
+    return course_data['full_time'].unique().tolist()
 
 def get_section_set(course_data, all_course):
     """
@@ -341,9 +352,9 @@ def get_sections_with_overlapping_time_slot_depricated(all_timeslot, all_section
     for section in all_section:
         timeslot_current_section = course_data[course_data['subject_course_section_occurrence'] == section]["full_time"].iloc[0]
         if timeslot_current_section in X_timeslot:
-            X_timeslot[t_current_section].add(section)
+            X_timeslot[timeslot_current_section].add(section)
         else:
-            X_timeslot[t_current_section] = {section}
+            X_timeslot[timeslot_current_section] = {section}
 
     section_student_dictimpletime = dict()
     for simpletime in timeinterval:

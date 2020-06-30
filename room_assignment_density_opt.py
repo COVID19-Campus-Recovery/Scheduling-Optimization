@@ -52,8 +52,8 @@ if __name__ == "__main__":
 
     course_data_filepath, room_data_filepath, output_data_filepath = RoomAssignmentDensityOpt.read_filenames(sys.argv)
 
-    course_data = dp.clean_course_data(course_data_filepath)
-    room_data = dp.clean_room_data(room_data_filepath)
+    course_data = dp.read_and_clean_course_data(course_data_filepath)
+    room_data = dp.read_and_clean_room_data(room_data_filepath)
 
     #generate model
     assign_opt = RoomAssignmentDensityOpt(course_data, room_data)

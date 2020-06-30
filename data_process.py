@@ -138,7 +138,7 @@ def mark_occurances(course_data):
 
     return course_data
 
-def clean_course_data(filepath):
+def read_and_clean_course_data(filepath):
     """
     Input: 
         filepath - str : full filepath of the excel course data that will be read
@@ -153,6 +153,23 @@ def clean_course_data(filepath):
     """
 
     course_data = read_data(filepath, course_columns, course_columns_optional)
+    course_data = clean_course_data(course_data)
+    return course_data
+
+
+def clean_course_data(course_data):
+    """
+    Input: 
+        course_data - pandas.DataFrame: (typically) raw data pulled from file
+
+    Output:
+        df - pandas.DataFrame: data pulled from filepath
+
+    Should be called to load course dataframe before being passed into the constructor for RoomAssignmentOpt
+    Dataprocessing is very minimal, and mainly to ensure standardization of column names for RoomAssignmentOpt
+    
+    Todo: the waring for uniqueness should actually be an error. Since this is calaculated internall it should always be unique
+    """
 
     course_data['subject_course_section'] = course_data["subject_code"].astype(str) + "_" + course_data["course_number"].astype(str)  \
                                            + "_" + course_data["course_section"].astype(str)
@@ -192,7 +209,7 @@ def separate_online_courses(course_data):
 def separate_online_courses_by_capacity(course_data, weeks_in_semester, minimum_class_days):
     pass
 
-def clean_room_data(filepath):
+def read_and_clean_room_data(filepath):
     """
     Input: 
         filepath - str : full filepath of the excel course data that will be read

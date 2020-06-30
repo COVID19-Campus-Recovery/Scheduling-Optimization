@@ -37,6 +37,10 @@ def InputRoom(room_level_data_path,
     output_path: str, default="../Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_rooms_example.xlsx"
         the output path of the .xlsx file. Save to a new dictionary in /Documents/Madgie_Cleaned_Directory/Data.
 
+    room_type: select which type of class will be in the output, default = "Class"
+        if a str is passed, it should be the type of the class, e.g. "Class" "Meeting Classroom", or "nonclass" means other classrooms except "Class"
+        if a list is passed, it should be a list of types of class
+
     '''
 
     print("Room input file generating")
@@ -109,6 +113,7 @@ def InputRoom(room_level_data_path,
     room_out = room_out[room_out["bldg"] != "209"]
     room_out = room_out[["bldg_room","capacity","use"]]
 
+    # Select Classroom type
     if isinstance(room_type,str):
         if room_type == "nonclass":
             room_out = room_out[room_out["use"] != "Class"]
@@ -143,8 +148,11 @@ def InputCourse2019(course_2019_path,
           if a str is passed, it should be the filepath of room input data.
           if a pandas.dataframe passed, it should be the room input data itself.
 
-       output_path: str, default="../Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_courses_example2019.xlsx"
+       output_path: str, default="../Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_courses_full_enrollment_2019"
            the output path of the .xlsx file. Save to a new dictionary in /Documents/Madgie_Cleaned_Directory/Data.
+
+        boost: bool, default = False
+            if include the boost column
 
        '''
     print("2019 Course Input Data Generating")
@@ -182,12 +190,15 @@ def InputCourse2019(course_2019_path,
 
     course_2019_out = course_2019_out[~course_2019_out["Room Use"].isnull()]
 
+    # Customized output file name
     global room_type_global
     if isinstance(room_type_global, str):
         output_path+=("_"+room_type_global)
     else:
         output_path+="_other"
 
+
+    # Boost Column
     if boost:
         course_2019_out["Level"] = course_2019_out["Course Number"].str[0]
         num_level = len(course_2019_out["Level"].unique())
@@ -220,6 +231,9 @@ def InputCourse2020(course_2020_path,
 
        output_path: str, default="../Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_courses_example2019.xlsx"
            the output path of the .xlsx file. Save to a new dictionary in /Documents/Madgie_Cleaned_Directory/Data.
+
+       boost: bool, default = False
+           if include the boost column
 
        '''
     print("2020 Course Input data Generating")
@@ -271,12 +285,14 @@ def InputCourse2020(course_2020_path,
 
     course_2020_out = course_2020_out[~course_2020_out["Room Use"].isnull()]
 
+    # Customized output file name
     global room_type_global
     if isinstance(room_type_global, str):
         output_path+=("_"+room_type_global)
     else:
         output_path+="_other"
 
+    # Boost Column
     if boost:
         course_2020_out["Level"] = course_2020_out["Course Number"].str[0]
         num_level = len(course_2020_out["Level"].unique())

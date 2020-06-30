@@ -86,7 +86,7 @@ if __name__ == "__main__":
     course_data_isye, buildings_used_for_isye = dp.clean_course_data('raw_data/ISYE_FallSemesterScenarios_ClassSchedules.xlsx')
     student_data_isye = dp.clean_student_data('raw_data/ISYE_FallSemesterScenarios_Students_Final.xlsx')
 
-    room_data_isye = dp.clean_room_data('raw_data/ISYE_FallSemesterScenarios_BuildingRooms.xlsx',
+    room_data_isye = dp.read_and_clean_room_data('raw_data/ISYE_FallSemesterScenarios_BuildingRooms.xlsx',
                                         buildings=buildings_used_for_isye)
 
 

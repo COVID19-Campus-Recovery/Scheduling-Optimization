@@ -20,10 +20,10 @@ class RoomAssignmentOpt(GenericScheduleOpt):
         return
 
     def get_all_sets_params(self):
-        self.all_course = self.course_data['subject_course_section'].unique().tolist()
-        self.all_section = self.course_data['subject_course_section_occurrence'].tolist()
-        self.all_room = self.room_data['bldg_room'].tolist()
-        self.all_timeslot = self.course_data['full_time'].unique()
+        self.all_course = sp.get_all_courses(self.course_data)
+        self.all_section = sp.get_all_sections(self.course_data)
+        self.all_room = sp.get_all_rooms(self.room_data)
+        self.all_timeslot = sp.get_all_timeslots(self.course_data)
         self.all_simple_timeslot = sp.get_all_simplieid_timeslot(self.all_timeslot)
 
         print("setting course to section set")
@@ -175,8 +175,8 @@ if __name__ == "__main__":
 
     course_data_filepath, room_data_filepath, output_data_filepath = RoomAssignmentOpt.read_filenames(sys.argv)
 
-    course_data = dp.clean_course_data(course_data_filepath)
-    room_data = dp.clean_room_data(room_data_filepath)
+    course_data = dp.read_and_clean_course_data(course_data_filepath)
+    room_data = dp.read_and_clean_room_data(room_data_filepath)
 
     #generate model
     assign_opt = RoomAssignmentOpt(course_data, room_data)
