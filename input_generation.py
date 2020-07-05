@@ -5,7 +5,7 @@ import numpy as np
 Input data generation
 Three methods: InputRoom, InputCourse2019, InputCourse2020
 
-Assumptions: 
+Assumptions:  
     1. Some rooms in room_level_data don't have Max Capacity, so we used 6' Module Capacity at 36sf instead.
     2. Rooms in ISYE_FallSemesterScenarios_BuildingRooms.xlsx don't have "Class Use" information, so we assumed those 
         classrooms are "Class", i.e. General Classroom.
