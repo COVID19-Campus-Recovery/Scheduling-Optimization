@@ -19,6 +19,13 @@ def instantiate_mock_course(course_attribute_val_dict):
 	course_row = course_row.append(course_attribute_val_dict, ignore_index=True)
 	return course_row
 
+def instantiate_mock_room(room_attribute_val_dict):
+	if any(key not in dp.room_columns for key in room_attribute_val_dict.keys()):
+		raise Exception('Room attributes {} not in {}'.format(room_attribute_val_dict.keys(), dp.room_columns))
+	room_row = pd.DataFrame(columns = dp.course_columns)
+	room_row = room_row.append(room_attribute_val_dict, ignore_index=True)
+	return room_row
+
 class TestSetProcesses(unittest.TestCase):
 
 	def test_get_section_set(self):
@@ -41,6 +48,27 @@ class TestSetProcesses(unittest.TestCase):
 		self.assertTrue(len(section_course_dict['SUBJ0_0001_A']) == 1)
 		self.assertTrue(len(section_course_dict['SUBJ0_0001_B']) == 1)
 		self.assertTrue(len(section_course_dict['SUBJ0_0002_A']) == 2)
+
+	def test_get_room_sets_capacity_restricted(self):
+
+		# Add two sections with capacities 10 and 20 respectively
+		course_data = instantiate_mock_course({"subject_code" : 'SUBJ0', "course_number" : '0001', "course_section" : 'A', "enrollment" : 10})
+		course_data = course_data.append(instantiate_mock_course({"subject_code" : 'SUBJ0', "course_number" : '0001', "course_section" : 'A', "enrollment" : 20}))
+		course_data = dp.clean_course_data(course_data)
+		# Add a room with capacity 15
+		room_data = instantiate_mock_room({"bldg_room" : 'BLDG0_RM001', "capacity" : 15})
+		
+		all_rooms = sp.get_all_rooms(room_data)
+		all_sections = sp.get_all_sections(course_data)
+		room_section_dictionary, section_room_dictionary = sp.get_room_sets_capacity_restricted(course_data, room_data, all_rooms, all_sections)
+
+		#
+		self.assertTrue(len(room_section_dictionary) == 2)
+		self.assertTrue(len(section_room_dictionary) == 1)
+		# 'BLDG0_RM001' can only accomodate 'SUBJ0_0001_A_0' 
+		self.assertTrue(room_section_dictionary['SUBJ0_0001_A_0'] == ['BLDG0_RM001'])
+		self.assertTrue(room_section_dictionary['SUBJ0_0001_A_1'] == [])
+		self.assertTrue(section_room_dictionary['BLDG0_RM001'] == ['SUBJ0_0001_A_0'])
 
 	def test_get_overlapping_time_slots_time_overlap(self):
 
