@@ -416,7 +416,7 @@ def InputCourse2020_adjust(course_2020_path,
                                        "Room Use", "keep assigned room", "CRN", "Contact Hours","Raw Preference"]]
 
     course_2020_out["Preference"] = course_2020_out["Raw Preference"]
-    course_2020_out.loc[course_2020_out["Raw Preference"] == "Hybrid", "Preference"] = "hybrid_split, hybrid_touchpoint"
+    course_2020_out.loc[course_2020_out["Raw Preference"] == "Hybrid", "Preference"] = "hybrid_split, hybrid_touchpoint,residential_spread"
 
 
     course_2020_out.to_excel(output_path + ".xlsx", index=False)
