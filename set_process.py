@@ -105,6 +105,10 @@ def get_timeslot_sets(course_data, all_section, all_timeslot):
 
 def get_room_sets_capacity_restricted(course_data, room_data, all_room, all_section):
     """ 
+    Depricated - conrolling for capacity now happens through remove_remote_rooms_availability. 
+    However, we way wish to refactor so we are not adding values to the dictoinaries course_data and room_data in get_room_sets
+        only to remove them when we run remove_remote_rooms_availability
+
     Input:
         course_data - pd.DataFrame: properly formatted course dataframe
         room_data - pd.DataFrame: properly formatted room dataframe
