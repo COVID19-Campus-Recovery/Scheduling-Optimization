@@ -305,6 +305,124 @@ def InputCourse2020(course_2020_path,
     course_2020_out.to_excel(output_path+".xlsx", index=False)
 
 
+def InputCourse2020_adjust(course_2020_path,
+                    room_input_path,
+                    updated_enrollment_path,
+                    output_path="../Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_courses_full_enrollment_2020",
+                    boost=False):
+    r'''
+    Standard course input room file: .xlsx with coulumns: ["Subject Code","Course Number","Course Section","Enrollment",
+                                "Days","Begin Time","End Time","Building Number","Room","Exclusively Online","Room Use"]
+
+       Parameters:
+       -------------
+       course_2019_path: str, default=None
+           file path of 2019 course data
+
+       room_input_path: str OR pandas.dataframe default=None
+          if a str is passed, it should be the filepath of room input data.
+          if a pandas.dataframe passed, it should be the room input data itself.
+
+       output_path: str, default="../Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_courses_example2019.xlsx"
+           the output path of the .xlsx file. Save to a new dictionary in /Documents/Madgie_Cleaned_Directory/Data.
+
+       boost: bool, default = False
+           if include the boost column
+
+       '''
+    print("2020 Course Input data Generating")
+
+    # Read Data
+    course_data_2020 = pd.read_excel(course_2020_path)
+    if isinstance(room_input_path, str):
+        room_input = pd.read_excel(room_input_path)
+
+    else:
+        room_input = room_input_path
+
+    # Data Cleaning
+    course_data_2020 = course_data_2020[(course_data_2020["Camp"] == "A") | (course_data_2020["Camp"] == "EM")]
+    course_2020_out = course_data_2020[["Subj Code", "Crse Num", "Sect", "ENRL Max",
+                                        "Days", "Start Time", "End Time", "Bldg", "Rm",
+                                        "RDL", "CRN", "Contact Hrs", "Delivery Mode Preference"]]
+
+    # Join the course data with room data
+    course_2020_out["bldg_room"] = course_2020_out["Bldg"].astype(str) + "_" + course_2020_out["Rm"].astype(str)
+    course_2020_out = course_2020_out.merge(room_input, on="bldg_room", how="left")
+
+    # Columns Formatting
+    course_2020_out["Start Time"] = course_2020_out["Start Time"].astype(str).replace('\.0', '', regex=True)
+    course_2020_out["End Time"] = course_2020_out["End Time"].astype(str).replace('\.0', '', regex=True)
+    course_2020_out["Days"] = course_2020_out["Days"].str.replace(" ", "")
+    course_2020_out.insert(course_2020_out.shape[1], "Exclusively Online", 0)
+    course_2020_out.loc[~course_2020_out["RDL"].isnull(), "RDL"] = 1
+    course_2020_out.loc[course_2020_out["RDL"].isnull(), "RDL"] = 0
+
+    # Merge the cross-list courses
+    '''
+    course_2020_out["Count"] = course_2020_out.groupby(["Cross List Group"])["ENRL Max"].transform("sum")
+    course_2020_out["Count"] = course_2020_out["Count"].fillna(course_2020_out["ENRL Max"])
+    course_2020_out = course_2020_out[
+        (~course_2020_out["Cross List Group"].duplicated()) | course_2020_out["Cross List Group"].isna()]
+    '''
+
+    # Output Generating
+    course_2020_out = course_2020_out[["Subj Code", "Crse Num", "Sect", "ENRL Max", "Days",
+                                       "Start Time", "End Time", "Bldg", "Rm", "Exclusively Online", "use", "RDL",
+                                       "CRN", "Contact Hrs", "Delivery Mode Preference"]]
+
+    course_2020_out = course_2020_out.rename(
+        columns={"Subj Code": "Subject Code", "Crse Num": "Course Number", "Sect": "Course Section",
+                 "ENRL Max": "Enrollment", "Start Time": "Begin Time",
+                 "Bldg": "Building Number", "Rm": "Room",
+                 "use": "Room Use", "RDL": "keep assigned room",
+                 "Delivery Mode Preference": "Preference"})
+
+    course_2020_out = course_2020_out.sort_values(by=["Subject Code", "Course Number", "Course Section"],
+                                                  na_position='last')
+
+    course_2020_out = course_2020_out[(~course_2020_out["Room Use"].isnull()) | course_2020_out["Room"].isnull()]
+    course_2020_out = course_2020_out[course_2020_out["Preference"] != "Cancel"]
+
+    # Customized output file name
+    global room_type_global
+    if isinstance(room_type_global, str):
+        output_path += ("_" + room_type_global)
+    else:
+        output_path += "_other"
+
+    # Boost Column
+    if boost:
+        course_2020_out["Level"] = course_2020_out["Crse Num"].str[0]
+        num_level = len(course_2020_out["Level"].unique())
+        level_mapping = dict(zip(sorted(course_2020_out["Level"].unique()), np.array(range(num_level, 0, -1)) / 2))
+        course_2020_out["boost"] = course_2020_out["Level"].map(level_mapping)
+        course_2020_out = course_2020_out.drop(columns=["Level"])
+
+        output_path += "_boost"
+
+
+
+    ## Adjust Enrollment
+    updated_enrollment = pd.read_excel(updated_enrollment_path)
+    updated_enrollment.drop_duplicates(keep="first", inplace=True)
+    course_2020_out = course_2020_out.merge(updated_enrollment[["CRN", "Assumed Enrollment Updated"]], on="CRN", how="left")
+    course_2020_out["Enrl"] = course_2020_out["Assumed Enrollment Updated"].fillna(
+        course_2020_out["Enrollment"]).astype(int)
+    course_2020_out = course_2020_out.drop(columns=["Enrollment", "Assumed Enrollment Updated"])
+    course_2020_out = course_2020_out.rename(columns={"Enrl": "Enrollment", "Contact Hrs": "Contact Hours","Preference": "Raw Preference"})
+    course_2020_out = course_2020_out[["Subject Code", "Course Number", "Course Section", "Enrollment","Days",
+                                       "Begin Time", "End Time","Building Number", "Room", "Exclusively Online",
+                                       "Room Use", "keep assigned room", "CRN", "Contact Hours","Raw Preference"]]
+
+    course_2020_out["Preference"] = course_2020_out["Raw Preference"]
+    course_2020_out.loc[course_2020_out["Raw Preference"] == "Hybrid", "Preference"] = "hybrid_split, hybrid_touchpoint,residential_spread"
+
+
+    course_2020_out.to_excel(output_path + ".xlsx", index=False)
+    return course_2020_out
+
+
 if __name__ == "__main__":
     room_input = InputRoom("../Documents/Madgie_Raw_Directory/Data/Room_Level_Data_20200522.xlsx",
                            "../Documents/Madgie_Raw_Directory/Data/20200604_CLSLAB_List.xlsx",
@@ -312,11 +430,11 @@ if __name__ == "__main__":
                            room_type="Class")
 
 
-
-
     InputCourse2019(
         course_2019_path="../Documents/Madgie_Raw_Directory/Data/Fall 2019 Schedule of Classes After Crosslisted Sections are combined and no classroom classes removed.xlsx",
         room_input_path=room_input,boost=False)
 
-    InputCourse2020(course_2020_path="../Documents/Madgie_Raw_Directory/Data/202008 Schedule of Classes.xlsx",
-                    room_input_path=room_input,boost=False)
+    InputCourse2020_adjust(course_2020_path="../Documents/Madgie_Raw_Directory/Data/Room and Mode Allocator Input File July 7.xlsx",
+                           room_input_path=room_input,
+                           updated_enrollment_path="../Documents/Madgie_Raw_Directory/Data/Updated enrollments.xlsx",
+                           boost=False)
