@@ -46,7 +46,7 @@ class RoomAssignmentPreferencesContactyOpt(RoomAssignmentContactyOpt):
     def set_objective(self, model, model_vars):
         model.ModelSense = GRB.MAXIMIZE
         self.set_mode_preferences_objective(model,model_vars, index=0, priority=1)
-        self.set_contact_hours_objective(model,model_vars, index=1, priority=2, reltol=preference_objective_tollerance)
+        self.set_contact_hours_objective(model,model_vars, index=1, priority=2)
         return
 
 
