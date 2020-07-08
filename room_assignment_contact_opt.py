@@ -108,17 +108,8 @@ class RoomAssignmentContactyOpt(RoomAssignmentOpt):
 
 if __name__ == "__main__":
 
-    if len(sys.argv) < 6:
-        system_arguements = [sys.argv[0],
-                            "/Users/mehrannavabi/Documents/Madgie_Cleaned_Directory/Data/25_6_2020/room_assignment_opt_courses_full_enrollment_2020 copy.xlsx",
-                            "/Users/mehrannavabi/Documents/Madgie_Cleaned_Directory/Data/25_6_2020/room_assignment_opt_rooms_25_percent_social_distance.xlsx",
-                            "/Users/mehrannavabi/Documents/Madgie_Cleaned_Directory/Output/",
-                            5,
-                            14]
-    else:
-        system_arguements = sys.argv
 
-    course_data_filepath, room_data_filepath, output_data_filepath, minimum_section_contact_days, weeks_in_semester = RoomAssignmentContactyOpt.read_filenames(system_arguements)
+    course_data_filepath, room_data_filepath, output_data_filepath, minimum_section_contact_days, weeks_in_semester = RoomAssignmentContactyOpt.read_filenames(sys.argv)
 
     course_data = dp.clean_course_data(course_data_filepath)
     room_data = dp.clean_room_data(room_data_filepath)
