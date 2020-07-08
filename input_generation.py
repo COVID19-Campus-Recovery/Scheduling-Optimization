@@ -1,10 +1,11 @@
 import pandas as pd
+import numpy as np
 
 '''
 Input data generation
 Three methods: InputRoom, InputCourse2019, InputCourse2020
 
-Assumptions: 
+Assumptions:  
     1. Some rooms in room_level_data don't have Max Capacity, so we used 6' Module Capacity at 36sf instead.
     2. Rooms in ISYE_FallSemesterScenarios_BuildingRooms.xlsx don't have "Class Use" information, so we assumed those 
         classrooms are "Class", i.e. General Classroom.
@@ -15,7 +16,8 @@ Assumptions:
 def InputRoom(room_level_data_path,
               CLSLAB_path,
               BuildingRoom_path,
-              ouput_path="../Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_rooms_example.xlsx"):
+              output_path="../Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_rooms_full_capacity",
+              room_type = "Class"):
     #
     r'''
     Standard input room file: .xlsx with coulumns:
@@ -35,9 +37,15 @@ def InputRoom(room_level_data_path,
     output_path: str, default="../Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_rooms_example.xlsx"
         the output path of the .xlsx file. Save to a new dictionary in /Documents/Madgie_Cleaned_Directory/Data.
 
+    room_type: select which type of class will be in the output, default = "Class"
+        if a str is passed, it should be the type of the class, e.g. "Class" "Meeting Classroom", or "nonclass" means other classrooms except "Class"
+        if a list is passed, it should be a list of types of class
+
     '''
 
     print("Room input file generating")
+    global room_type_global
+    room_type_global = room_type
 
     # Read data
     room_level_data = pd.read_excel(room_level_data_path)
@@ -59,8 +67,13 @@ def InputRoom(room_level_data_path,
     room_level_data["Room_code"] = room_level_data["Room_code"].astype(str).replace('\.0', '', regex=True)
 
     room_level_data["bldg_room"] = room_level_data["Facility"] + "_" + room_level_data["Room_code"]
-    room_level_data['Station Count (Current)'] = room_level_data['Station Count (Current)'].fillna(
-        room_level_data["6' Module Capacity at 36sf"].astype(str))
+
+
+    # For now, we simply delete those classrooms whose max capacities are NA:
+    room_level_data = room_level_data[~room_level_data['Station Count (Current)'].isnull()]
+    # room_level_data['Station Count (Current)'] = room_level_data['Station Count (Current)'].fillna(
+    #                       room_level_data["6' Module Capacity at 36sf"].astype(str))
+
     room_level_data['Station Count (Current)'] = room_level_data['Station Count (Current)'].astype(float)
     room_level_data_out = room_level_data[["bldg_room", "Station Count (Current)", "Use Name"]]
     room_level_data_out = room_level_data_out.rename(
@@ -96,14 +109,32 @@ def InputRoom(room_level_data_path,
     room_out["capacity"] = room_out["capacity"].fillna(0.0)
     room_out["capacity"] = room_out["capacity"].astype(int)
 
-    room_out.to_excel(ouput_path, index=False)
+    room_out[["bldg", "room"]] = room_out["bldg_room"].str.split("_", expand=True)
+    room_out = room_out[room_out["bldg"] != "209"]
+    room_out = room_out[["bldg_room","capacity","use"]]
+
+    # Select Classroom type
+    if isinstance(room_type,str):
+        if room_type == "nonclass":
+            room_out = room_out[room_out["use"] != "Class"]
+        else:
+            room_out = room_out[room_out["use"] == room_type]
+
+        output_path+=("_"+room_type)
+
+    if isinstance(room_type,list):
+        room_out = room_out[room_out["use"].isin(np.array(room_type))]
+        output_path+="_other"
+
+    room_out.to_excel(output_path+".xlsx", index=False)
 
     return room_out
 
 
 def InputCourse2019(course_2019_path,
                     room_input_path,
-                    output_path="../Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_courses_example2019.xlsx"):
+                    output_path="../Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_courses_full_enrollment_2019",
+                    boost = False):
     r'''
     Standard course input room file: .xlsx with coulumns: ["Subject Code","Course Number","Course Section","Enrollment",
                                 "Days","Begin Time","End Time","Building Number","Room","Exclusively Online","Room Use"]
@@ -117,8 +148,11 @@ def InputCourse2019(course_2019_path,
           if a str is passed, it should be the filepath of room input data.
           if a pandas.dataframe passed, it should be the room input data itself.
 
-       output_path: str, default="../Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_courses_example2019.xlsx"
+       output_path: str, default="../Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_courses_full_enrollment_2019"
            the output path of the .xlsx file. Save to a new dictionary in /Documents/Madgie_Cleaned_Directory/Data.
+
+        boost: bool, default = False
+            if include the boost column
 
        '''
     print("2019 Course Input Data Generating")
@@ -154,12 +188,34 @@ def InputCourse2019(course_2019_path,
     course_2019_out = course_2019_out.sort_values(by=["Subject Code", "Course Number", "Course Section"],
                                                   na_position='last')
 
-    course_2019_out.to_excel(output_path, index=False)
+    course_2019_out = course_2019_out[~course_2019_out["Room Use"].isnull()]
+
+    # Customized output file name
+    global room_type_global
+    if isinstance(room_type_global, str):
+        output_path+=("_"+room_type_global)
+    else:
+        output_path+="_other"
+
+
+    # Boost Column
+    if boost:
+        course_2019_out["Level"] = course_2019_out["Course Number"].str[0]
+        num_level = len(course_2019_out["Level"].unique())
+        level_mapping = dict(zip(sorted(course_2019_out["Level"].unique()), np.array(range(num_level, 0, -1)) / 2))
+        course_2019_out["boost"] = course_2019_out["Level"].map(level_mapping)
+        course_2019_out = course_2019_out.drop(columns=["Level"])
+
+        output_path += "_boost"
+
+
+    course_2019_out.to_excel(output_path+".xlsx", index=False)
 
 
 def InputCourse2020(course_2020_path,
                     room_input_path,
-                    output_path="../Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_courses_example2020.xlsx"):
+                    output_path="../Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_courses_full_enrollment_2020",
+                    boost = False):
     r'''
     Standard course input room file: .xlsx with coulumns: ["Subject Code","Course Number","Course Section","Enrollment",
                                 "Days","Begin Time","End Time","Building Number","Room","Exclusively Online","Room Use"]
@@ -176,6 +232,9 @@ def InputCourse2020(course_2020_path,
        output_path: str, default="../Documents/Madgie_Cleaned_Directory/Data/room_assignment_opt_courses_example2019.xlsx"
            the output path of the .xlsx file. Save to a new dictionary in /Documents/Madgie_Cleaned_Directory/Data.
 
+       boost: bool, default = False
+           if include the boost column
+
        '''
     print("2020 Course Input data Generating")
 
@@ -190,7 +249,7 @@ def InputCourse2020(course_2020_path,
     # Data Cleaning
     course_data_2020 = course_data_2020[(course_data_2020["Camp"] == "A") | (course_data_2020["Camp"] == "EM")]
     course_2020_out = course_data_2020[["Subj Code", "Course Number", "Sect", "ENRL Max", "Cross List Group",
-                                        "Days", "Start Time", "End Time", "Bldg", "Rm", "RDL"]]
+                                        "Days", "Start Time", "End Time", "Bldg", "Rm", "RDL","CRN","Contact Hours"]]
 
     # Join the course data with room data
     course_2020_out["bldg_room"] = course_2020_out["Bldg"].astype(str) + "_" + course_2020_out["Rm"].astype(str)
@@ -201,6 +260,9 @@ def InputCourse2020(course_2020_path,
     course_2020_out["End Time"] = course_2020_out["End Time"].astype(str).replace('\.0', '', regex=True)
     course_2020_out["Days"] = course_2020_out["Days"].str.replace(" ", "")
     course_2020_out.insert(course_2020_out.shape[1], "Exclusively Online", 0)
+    course_2020_out.loc[~course_2020_out["RDL"].isnull(),"RDL"] = 1
+    course_2020_out.loc[course_2020_out["RDL"].isnull(),"RDL"] =0
+
 
     # Merge the cross-list courses
     course_2020_out["Count"] = course_2020_out.groupby(["Cross List Group"])["ENRL Max"].transform("sum")
@@ -210,26 +272,51 @@ def InputCourse2020(course_2020_path,
 
     # Output Generating
     course_2020_out = course_2020_out[["Subj Code", "Course Number", "Sect", "Count", "Days",
-                                       "Start Time", "End Time", "Bldg", "Rm", "Exclusively Online", "use"]]
+                                       "Start Time", "End Time", "Bldg", "Rm", "Exclusively Online", "use","RDL",
+                                       "CRN","Contact Hours"]]
 
     course_2020_out = course_2020_out.rename(columns={"Subj Code": "Subject Code", "Sect": "Course Section",
                                                       "Count": "Enrollment", "Start Time": "Begin Time",
                                                       "Bldg": "Building Number", "Rm": "Room",
-                                                      "use": "Room Use"})
+                                                      "use": "Room Use","RDL":"keep assigned room"})
 
     course_2020_out = course_2020_out.sort_values(by=["Subject Code", "Course Number", "Course Section"],
                                                   na_position='last')
-    course_2020_out.to_excel(output_path, index=False)
+
+    course_2020_out = course_2020_out[~course_2020_out["Room Use"].isnull()]
+
+    # Customized output file name
+    global room_type_global
+    if isinstance(room_type_global, str):
+        output_path+=("_"+room_type_global)
+    else:
+        output_path+="_other"
+
+    # Boost Column
+    if boost:
+        course_2020_out["Level"] = course_2020_out["Course Number"].str[0]
+        num_level = len(course_2020_out["Level"].unique())
+        level_mapping = dict(zip(sorted(course_2020_out["Level"].unique()), np.array(range(num_level, 0, -1)) / 2))
+        course_2020_out["boost"] = course_2020_out["Level"].map(level_mapping)
+        course_2020_out = course_2020_out.drop(columns=["Level"])
+
+        output_path+="_boost"
+
+    course_2020_out.to_excel(output_path+".xlsx", index=False)
 
 
 if __name__ == "__main__":
     room_input = InputRoom("../Documents/Madgie_Raw_Directory/Data/Room_Level_Data_20200522.xlsx",
                            "../Documents/Madgie_Raw_Directory/Data/20200604_CLSLAB_List.xlsx",
-                           "../Documents/Madgie_Raw_Directory/Data/ISYE_FallSemesterScenarios_BuildingRooms.xlsx")
+                           "../Documents/Madgie_Raw_Directory/Data/ISYE_FallSemesterScenarios_BuildingRooms.xlsx",
+                           room_type="Class")
+
+
+
 
     InputCourse2019(
         course_2019_path="../Documents/Madgie_Raw_Directory/Data/Fall 2019 Schedule of Classes After Crosslisted Sections are combined and no classroom classes removed.xlsx",
-        room_input_path=room_input)
+        room_input_path=room_input,boost=False)
 
     InputCourse2020(course_2020_path="../Documents/Madgie_Raw_Directory/Data/202008 Schedule of Classes.xlsx",
-                    room_input_path=room_input)
+                    room_input_path=room_input,boost=False)
