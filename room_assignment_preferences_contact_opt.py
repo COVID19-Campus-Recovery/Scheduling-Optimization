@@ -11,9 +11,9 @@ class RoomAssignmentPreferencesContactyOpt(RoomAssignmentContactyOpt):
     model_description = "preferences_contact_max"
     informative_output_columns = ["subject_code", "course_number", "course_section", "bldg_room", "delivery_mode", "in_person_hours",  "preference"]
 
-    def __init__(self, course_data, room_data, minimum_section_contact_days, weeks_in_semester):
+    def __init__(self, course_data, room_data, minimum_section_contact_days, weeks_in_semester, preference_objective_tollerance):
         super().__init__(course_data, room_data, minimum_section_contact_days, weeks_in_semester)
-
+        self.preference_objective_tollerance = preference_objective_tollerance
         return
 
 
@@ -39,13 +39,14 @@ class RoomAssignmentPreferencesContactyOpt(RoomAssignmentContactyOpt):
         model.setObjectiveN(quicksum(X_xr[(section, room)] for section in self.all_section for room in self.preferred_room_section_dictionary[section]) +
                             quicksum(1 - quicksum(X_xr[(section, room)] for room in self.room_section_dictionary[section]) for section in self.all_section if "remote" in self.permissible_delivery_mode_section_dict[section]),
                            index=index,
-                           priority=priority)
+                           priority=priority,
+                           reltol=self.preference_objective_tollerance)
 
 
     def set_objective(self, model, model_vars):
         model.ModelSense = GRB.MAXIMIZE
         self.set_mode_preferences_objective(model,model_vars, index=0, priority=1)
-        self.set_contact_hours_objective(model,model_vars, index=1, priority=2)
+        self.set_contact_hours_objective(model,model_vars, index=1, priority=2, reltol=preference_objective_tollerance)
         return
 
 
@@ -58,7 +59,7 @@ if __name__ == "__main__":
     room_data = dp.clean_room_data(room_data_filepath)
 
     #generate model
-    assign_opt = RoomAssignmentPreferencesContactyOpt(course_data, room_data, minimum_section_contact_days, weeks_in_semester)
+    assign_opt = RoomAssignmentPreferencesContactyOpt(course_data, room_data, minimum_section_contact_days, weeks_in_semester, 0.02)
     model = assign_opt.construct_model()
     model.update()
     model.printStats()
