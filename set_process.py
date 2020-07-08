@@ -44,8 +44,7 @@ def get_student_sets(student_data, all_section):
     """ 
     Depricated (at least temporarily)
     A revised version of this method, considering the proper input data format
-    will likely be created after we have finalized how individual students will 
-    be considered in the optimization model
+    may be created if we decide to incorporate individual students into the model
     """
     student_data.fillna("-", inplace=True)
     section_student_dict = dict()
@@ -106,6 +105,10 @@ def get_timeslot_sets(course_data, all_section, all_timeslot):
 
 def get_room_sets_capacity_restricted(course_data, room_data, all_room, all_section):
     """ 
+    Depricated - conrolling for capacity now happens through remove_remote_rooms_availability. 
+    However, we way wish to refactor so we are not adding values to the dictoinaries course_data and room_data in get_room_sets
+        only to remove them when we run remove_remote_rooms_availability
+
     Input:
         course_data - pd.DataFrame: properly formatted course dataframe
         room_data - pd.DataFrame: properly formatted room dataframe
@@ -162,6 +165,8 @@ def get_room_sets(course_data, room_data, all_room, all_section):
         with a value of "class" or "conference room" in its "use" is applicable 
         to the given row in course_data
 
+
+
     The implmentation bellow is naive and may be improved for runtime
     """
 
@@ -188,7 +193,6 @@ def get_room_sets(course_data, room_data, all_room, all_section):
         bldgroom_section_dictionary[section] = bldgroom_current_section #let the value of bldgroom_section_dictionary point to this set
 
     return bldgroom_section_dictionary, section_bldgroom_dictionary
-
 
 def remove_remote_rooms_availability(bldgroom_section_dictionary,
                                     section_bldgroom_dictionary,
@@ -222,6 +226,59 @@ def remove_remote_rooms_availability(bldgroom_section_dictionary,
                 available_section.remove(section)
 
     return bldgroom_section_dictionary, section_bldgroom_dictionary
+
+
+def get_preferred_room_sets(course_data,
+                           room_data,
+                           room_section_dictionary,
+                           section_room_dictionary,
+                           permissible_delivery_mode_section_dict,
+                           delivery_mode_section_room_dict):
+
+    """ 
+    Input:
+        course_data - pd.DataFrame: properly formatted course dataframe
+        room_data - pd.DataFrame: properly formatted room dataframe
+        room_section_dictionary - dict(str, str): maps rooms to sections that may be taught in that timeslot
+        section_room_dictionary - dict(str, str): maps sections to rooms in which they may be taught
+        permissible_delivery_mode_section_dict - dict{str: set(str)}: maps a section to a list of the delivery modes it may be taught in
+    Output:
+        preferred_room_section_dictionary - dict(str, set{str}): maps rooms to sections that may be taught in that timeslot according to sections' instruction mode preferences
+        preferred_section_room_dictionary - dict(str, set{str}): maps sections to rooms in which they may be taught according to sections' instruction mode preferences
+  
+    Intended for use in RoomAssignmentPreferencesContactyOpt. This model optimizes the number of sections that are taught in their preferred mode.
+    It is therefore necessary to be able to map sections to rooms (and vice versa) that can be used to teach the section in their preferred mode.
+    Note that the keys of room_section_dictionary will be idential to that of preferred_room_section_dictionary.
+    Moreover, for a given key, the corresponding value in preferred_room_section_dictionary will be a subset of the corresponding value in room_section_dictionary
+    
+    TODO: is there a more effective way to design the the datastructures to make these maniuplations simpler?
+    """
+
+    preferred_room_section_dictionary = dict()
+    for section, available_room_set in room_section_dictionary.items():
+        available_room_list = list(available_room_set)
+        permissible_delivery_mode_set = permissible_delivery_mode_section_dict[section]
+        preferred_room_set = set()
+        preferred_room_section_dictionary[section] = preferred_room_set
+        for room in available_room_list:
+            delivery_mode = delivery_mode_section_room_dict[section, room]
+            if delivery_mode in permissible_delivery_mode_set:
+                preferred_room_set.add(room)
+
+
+    preferred_section_room_dictionary = dict()
+    for room, available_section_set in section_room_dictionary.items():
+        available_section_list = list(available_section_set)
+        preferred_section_set = set()
+        preferred_section_room_dictionary[room] = preferred_section_set
+        for section in available_section_list:
+            permissible_delivery_mode_set = permissible_delivery_mode_section_dict[section]
+            delivery_mode = delivery_mode_section_room_dict[section, room]
+            if delivery_mode in permissible_delivery_mode_set:
+                preferred_section_set.add(section)
+
+    return preferred_room_section_dictionary, preferred_section_room_dictionary
+
 
 def get_room_sets_trivial(course_data, room_data, all_room, all_section):
     """ 
@@ -693,8 +750,108 @@ def get_priority_boost(course_data,
     This model maximizes total contact hours. The contact hours of a section will then be weighted by priority_boost_section_dict
     """
 
-    if "priotity_boost" in course_data.columns:
-        priority_boost_section_dict = pd.Series(course_data["priotity_boost"].values,index=course_data['subject_course_section_occurrence']).to_dict()
+    if "priority" in course_data.columns:
+        priority_boost_section_dict = pd.Series(course_data["priority"].values,index=course_data['subject_course_section_occurrence']).to_dict()
     else:
         priority_boost_section_dict = {section: 1 for section in all_section}
     return priority_boost_section_dict
+
+
+
+def get_unit_section_sets(course_data,
+                         all_section):
+    """
+    Input:
+        course_data - pd.DataFrame: properly formatted course dataframe
+        all_section - set(str): set of all sections available in the optimization problem
+    Output:
+        section_unit_dict - dict{str: str}: maps each unit to a set of all sections in that unit
+        unit_section_dict - dict{str: set(str)}: maps each section to its corresponding unit
+    
+    Intended for use in room_assignment_contact_opt_building_pref, where the relationship between specific sections
+        and their corresponding units is relevant in determining sections' building and room assignments
+    """
+
+    unit_section_dict = dict()
+    section_unit_dict = dict()
+    for section in all_secction:
+        corresponding_unit = all_section[all_section['subject_course_section_occurrence']==section]['subject_code'][0]
+        unit_section_dict[section] = corresponding_unit
+        if corresponding_unit in section_unit_dict:
+            section_unit_dict[corresponding_unit].add(section)
+        else:
+            section_unit_dict[corresponding_unit] = {section}
+
+    return unit_section_dict, section_unit_dict
+
+
+def get_room_building_sets(all_room):
+    """
+    Input:
+        all_room - set(str): set of all rooms available in the optimization problem
+
+    Output:
+        room_building_dict - dict{str: str}: maps each building to a set of all room in that building
+        building_room_dict - dict{str: str}: maps each room to its corresponding building
+    
+    Intended for use in room_assignment_contact_opt_building_pref, where the relationship between specific rooms
+        and their buildings units is relevant in determining sections' building and room assignments
+    Recall that each room in all_room already encodes building information. Specifically, each room is specified as
+        "buildingcode_roomnumber". In the output dictionaries, rooms are specified in the same manner, and the building
+        code from the prefix of each room is used. For example, if a all_room contains the entries:
+        "172_102, 172_224, 172_300, 172_101", then room_building_dict may contain the the key value paid:
+        "172": {"172_102, 172_224, 172_300, 172_101"}
+    """
+
+
+    room_building_dict = dict()
+    building_room_dict = dict()
+    for room in all_room:
+        building = building_room.split("_")[0]
+        building_room_dict[room] = building
+        if building in room_building_dict:
+            room_building_dict[building].add(room)
+        else:
+            room_building_dict[building] = {room}
+
+    return room_building_dict, building_room_dict
+
+def get_unit_building_sets(unit_requirements_data):
+    """
+    Input:
+        unit_building_data - pd.DataFrame: properly formatted unit building dataframe
+    Output:
+        fraction_unit_building_dict - dict{(str, str): float}: maps tuples of unit code and building number to the desired fraction of
+            a given unit's sections we wish to assign to the given building. Note there does not need to be an entry each possible
+            combination of units and buildings. We simply include elements if there is a corresponding room in unit_requirements_data
+
+    Intended for use in room_assignment_contact_opt_building_pref, room assignments will be influenced by fraction_unit_building_dict
+    """
+
+    unit_building_tuples = [(row["subject_code"], row["building_number"]) for row in unit_requirements_data.iterrows()]
+    fraction_unit_building_dict = pd.Series(unit_requirements_data["fraction"].values,index=unit_building_tuples).to_dict()
+    return fraction_unit_building_dict
+
+def get_permissible_delivery_mode(course_data,
+                                 all_section):
+    """
+    Input:
+        course_data - pd.DataFrame: properly formatted course dataframe
+        all_section - set(str): set of all sections available in the optimization problem
+    Output:
+        permissible_delivery_mode_section_dict - dict{str: set(str)}: maps a section to a list of the delivery modes it may be taught in
+
+    """
+    all_permissible_delivery_mode = {"residential_spread",
+                                         "hybrid_split",
+                                         "hybrid_touchpoint",
+                                         "remote"}
+
+    if 'mode' not in course_data.columns: 
+        permissible_delivery_mode_section_dict = {section: all_permissible_delivery_mode for section in all_section}
+    else:
+        permissible_delivery_mode_all = [{permissible_mode.strip() for permissible_mode in permissible_mode_full_str.split(",")} if type(permissible_mode_full_str) is str else all_permissible_delivery_mode for permissible_mode_full_str in course_data["mode"].values]
+        permissible_delivery_mode_section_dict = pd.Series(permissible_delivery_mode_all,index=course_data['subject_course_section_occurrence']).to_dict()
+    # permissible_delivery_mode_section_dict = {section: all_permissible_delivery_mode for section in all_section}
+
+    return permissible_delivery_mode_section_dict
