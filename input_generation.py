@@ -304,7 +304,7 @@ def InputCourse2020(course_2020_path,
 
     course_2020_out.to_excel(output_path+".xlsx", index=False)
 
-
+# Add the enrollment updated file
 def InputCourse2020_adjust(course_2020_path,
                     room_input_path,
                     updated_enrollment_path,
@@ -341,10 +341,14 @@ def InputCourse2020_adjust(course_2020_path,
         room_input = room_input_path
 
     # Data Cleaning
+
     course_data_2020 = course_data_2020[(course_data_2020["Camp"] == "A") | (course_data_2020["Camp"] == "EM")]
-    course_2020_out = course_data_2020[["Subj Code", "Crse Num", "Sect", "ENRL Max",
+    #course_data_2020["Cross List Max ENRL"] = course_data_2020["Cross List Max ENRL"].fillna(course_data_2020["Assumed Enrollment for Planning"])
+
+    course_2020_out = course_data_2020[["Subj Code", "Crse Num", "Sect", "Assumed Enrollment for Planning",
                                         "Days", "Start Time", "End Time", "Bldg", "Rm",
                                         "RDL", "CRN", "Contact Hrs", "Delivery Mode Preference"]]
+
 
     # Join the course data with room data
     course_2020_out["bldg_room"] = course_2020_out["Bldg"].astype(str) + "_" + course_2020_out["Rm"].astype(str)
@@ -358,22 +362,17 @@ def InputCourse2020_adjust(course_2020_path,
     course_2020_out.loc[~course_2020_out["RDL"].isnull(), "RDL"] = 1
     course_2020_out.loc[course_2020_out["RDL"].isnull(), "RDL"] = 0
 
-    # Merge the cross-list courses
-    '''
-    course_2020_out["Count"] = course_2020_out.groupby(["Cross List Group"])["ENRL Max"].transform("sum")
-    course_2020_out["Count"] = course_2020_out["Count"].fillna(course_2020_out["ENRL Max"])
-    course_2020_out = course_2020_out[
-        (~course_2020_out["Cross List Group"].duplicated()) | course_2020_out["Cross List Group"].isna()]
-    '''
 
-    # Output Generating
-    course_2020_out = course_2020_out[["Subj Code", "Crse Num", "Sect", "ENRL Max", "Days",
+
+
+    # Columns select
+    course_2020_out = course_2020_out[["Subj Code", "Crse Num", "Sect", "Assumed Enrollment for Planning", "Days",
                                        "Start Time", "End Time", "Bldg", "Rm", "Exclusively Online", "use", "RDL",
                                        "CRN", "Contact Hrs", "Delivery Mode Preference"]]
 
     course_2020_out = course_2020_out.rename(
         columns={"Subj Code": "Subject Code", "Crse Num": "Course Number", "Sect": "Course Section",
-                 "ENRL Max": "Enrollment", "Start Time": "Begin Time",
+                 "Assumed Enrollment for Planning": "Enrollment", "Start Time": "Begin Time",
                  "Bldg": "Building Number", "Rm": "Room",
                  "use": "Room Use", "RDL": "keep assigned room",
                  "Delivery Mode Preference": "Preference"})
@@ -403,22 +402,28 @@ def InputCourse2020_adjust(course_2020_path,
 
 
 
+
     ## Adjust Enrollment
     updated_enrollment = pd.read_excel(updated_enrollment_path)
     updated_enrollment.drop_duplicates(keep="first", inplace=True)
     course_2020_out = course_2020_out.merge(updated_enrollment[["CRN", "Assumed Enrollment Updated"]], on="CRN", how="left")
-    course_2020_out["Enrl"] = course_2020_out["Assumed Enrollment Updated"].fillna(
-        course_2020_out["Enrollment"]).astype(int)
+    course_2020_out["Enrl"] = course_2020_out["Assumed Enrollment Updated"].fillna(course_2020_out["Enrollment"]).astype(int)
     course_2020_out = course_2020_out.drop(columns=["Enrollment", "Assumed Enrollment Updated"])
+
+
     course_2020_out = course_2020_out.rename(columns={"Enrl": "Enrollment", "Contact Hrs": "Contact Hours","Preference": "Raw Preference"})
     course_2020_out = course_2020_out[["Subject Code", "Course Number", "Course Section", "Enrollment","Days",
                                        "Begin Time", "End Time","Building Number", "Room", "Exclusively Online",
                                        "Room Use", "keep assigned room", "CRN", "Contact Hours","Raw Preference"]]
 
+    # Fill NA Class USE
+    course_2020_out["Room Use"] = course_2020_out["Room Use"].fillna("Class")
+
+    # Preference Handle
     course_2020_out["Preference"] = course_2020_out["Raw Preference"]
     course_2020_out.loc[course_2020_out["Raw Preference"] == "Hybrid", "Preference"] = "hybrid_split, hybrid_touchpoint,residential_spread"
-
-
+    course_2020_out.loc[course_2020_out["Raw Preference"] == "Remote", "Preference"] = "remote"
+    course_2020_out.loc[course_2020_out["Raw Preference"] == "Residential", "Preference"] = "residential_spread"
     course_2020_out.to_excel(output_path + ".xlsx", index=False)
     return course_2020_out
 
@@ -430,11 +435,11 @@ if __name__ == "__main__":
                            room_type="Class")
 
 
-    InputCourse2019(
-        course_2019_path="../Documents/Madgie_Raw_Directory/Data/Fall 2019 Schedule of Classes After Crosslisted Sections are combined and no classroom classes removed.xlsx",
-        room_input_path=room_input,boost=False)
+    # InputCourse2019(
+    #     course_2019_path="../Documents/Madgie_Raw_Directory/Data/Fall 2019 Schedule of Classes After Crosslisted Sections are combined and no classroom classes removed.xlsx",
+    #     room_input_path=room_input,boost=False)
 
-    InputCourse2020_adjust(course_2020_path="../Documents/Madgie_Raw_Directory/Data/Room and Mode Allocator Input File July 7.xlsx",
+    InputCourse2020_adjust(course_2020_path="../Documents/Madgie_Raw_Directory/Data/Room and Mode Allocator Input File July 9.xlsx",
                            room_input_path=room_input,
                            updated_enrollment_path="../Documents/Madgie_Raw_Directory/Data/Updated enrollments.xlsx",
                            boost=False)
