@@ -358,6 +358,7 @@ def InputCourse2020_adjust(course_2020_path,
     course_2020_out["Start Time"] = course_2020_out["Start Time"].astype(str).replace('\.0', '', regex=True)
     course_2020_out["End Time"] = course_2020_out["End Time"].astype(str).replace('\.0', '', regex=True)
     course_2020_out["Days"] = course_2020_out["Days"].str.replace(" ", "")
+    course_2020_out["Delivery Mode Preference"] = course_2020_out["Delivery Mode Preference"].str.replace(" ", "")
     course_2020_out.insert(course_2020_out.shape[1], "Exclusively Online", 0)
     course_2020_out.loc[~course_2020_out["RDL"].isnull(), "RDL"] = 1
     course_2020_out.loc[course_2020_out["RDL"].isnull(), "RDL"] = 0
