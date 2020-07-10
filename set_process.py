@@ -264,7 +264,7 @@ def get_preferred_room_sets(course_data,
             delivery_mode = delivery_mode_section_room_dict[section, room]
             if delivery_mode in permissible_delivery_mode_set:
                 preferred_room_set.add(room)
-
+        print("")
 
     preferred_section_room_dictionary = dict()
     for room, available_section_set in section_room_dictionary.items():
@@ -700,6 +700,44 @@ def get_contact_hours(all_section,
     return total_contact_hours_section_room_dict, delivery_mode_section_room_dict
 
 
+def get_contact_hours_helper_depricated(capacity,
+                                      enrollment,
+                                      meeting_hours,
+                                      weekly_meeting_days,
+                                      minimum_section_contact_days,
+                                      weeks_in_semester):
+    """
+    Input:
+        capacity - int: capacity for the room on interest
+        enrollment - int: enrollment for the section of interest
+        meeting_hours - float: the number of hours the section of interest meetings, on any day it meeints
+        weekly_meeting_days - int: number of days a week the section of interet meets
+    Output:
+        contact_hours - float: number of contact hours for the section of interest if it is scheduled in the room of interest
+        delivery_mode -  str: delivery mode that the section must take, it's to be taught in that room
+                              possible values are: "residential_spread", "hybrid_split", "hybrid_touchpoint", "remote"
+
+    Inteneded as a helper method to get_contact_hours.
+    All input paramters are specific to a given room and section.
+    """
+
+    if enrollment <= capacity:
+        return meeting_hours * weekly_meeting_days, "residential_spread"
+    elif enrollment <= weekly_meeting_days * capacity:
+        for limited_weekly_meeting_days in [2, weekly_meeting_days + 1]:
+            if enrollment <= limited_weekly_meeting_days * capacity:
+                contact_days_per_week = weekly_meeting_days - limited_weekly_meeting_days + 1
+                contact_hours = meeting_hours * contact_days_per_week
+                return contact_hours, "hybrid_split"
+    elif enrollment <= weeks_in_semester * weekly_meeting_days * capacity / minimum_section_contact_days:
+        avg_contact_days_per_week = floor(weeks_in_semester * weekly_meeting_days * capacity / enrollment) / weeks_in_semester
+        contact_hours = meeting_hours * avg_contact_days_per_week
+        return contact_hours, "hybrid_touchpoint"
+    else:
+        return 0, "remote"
+
+
+
 def get_contact_hours_helper(capacity,
                             enrollment,
                             meeting_hours,
@@ -725,10 +763,10 @@ def get_contact_hours_helper(capacity,
         return meeting_hours * weekly_meeting_days, "residential_spread"
     elif enrollment <= weekly_meeting_days * capacity:
         for limited_weekly_meeting_days in [2, weekly_meeting_days + 1]:
-            if enrollment < limited_weekly_meeting_days * capacity:
-                contact_days_per_week = weekly_meeting_days - limited_weekly_meeting_days + 1
-                contact_hours = meeting_hours * contact_days_per_week
+            if weekly_meeting_days in {2, 3}:
+                contact_hours = meeting_hours
                 return contact_hours, "hybrid_split"
+            elif meeting_days == 4
     elif enrollment <= weeks_in_semester * weekly_meeting_days * capacity / minimum_section_contact_days:
         avg_contact_days_per_week = floor(weeks_in_semester * weekly_meeting_days * capacity / enrollment) / weeks_in_semester
         contact_hours = meeting_hours * avg_contact_days_per_week
@@ -847,10 +885,10 @@ def get_permissible_delivery_mode(course_data,
                                          "hybrid_touchpoint",
                                          "remote"}
 
-    if 'mode' not in course_data.columns: 
+    if 'preference' not in course_data.columns: 
         permissible_delivery_mode_section_dict = {section: all_permissible_delivery_mode for section in all_section}
     else:
-        permissible_delivery_mode_all = [{permissible_mode.strip() for permissible_mode in permissible_mode_full_str.split(",")} if type(permissible_mode_full_str) is str else all_permissible_delivery_mode for permissible_mode_full_str in course_data["mode"].values]
+        permissible_delivery_mode_all = [{permissible_mode.strip() for permissible_mode in permissible_mode_full_str.split(",")} if type(permissible_mode_full_str) is str else all_permissible_delivery_mode for permissible_mode_full_str in course_data["preference"].values]
         permissible_delivery_mode_section_dict = pd.Series(permissible_delivery_mode_all,index=course_data['subject_course_section_occurrence']).to_dict()
     # permissible_delivery_mode_section_dict = {section: all_permissible_delivery_mode for section in all_section}
 

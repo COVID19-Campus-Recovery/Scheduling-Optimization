@@ -30,13 +30,6 @@ class RoomAssignmentPreferencesContactyOpt(RoomAssignmentContactyOpt):
                                                                                                                     self.section_room_dictionary,
                                                                                                                     self.permissible_delivery_mode_section_dict,
                                                                                                                     self.delivery_mode_section_room_dict)
-        for section in self.all_section:
-            num_rooms = len(self.room_section_dictionary[section])
-            num_preferred_rooms = len(self.preferred_room_section_dictionary[section])
-            print(self.permissible_delivery_mode_section_dict[section])
-            print(num_rooms)
-            print(num_preferred_rooms)
-            print("")
         return
 
 
