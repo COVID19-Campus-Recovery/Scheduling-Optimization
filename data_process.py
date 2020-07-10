@@ -12,7 +12,7 @@ course_columns = [
     "begin_time",
     "end_time",
     "exclusively_online",
-    "room_use"
+    "room_use",
 ]
 
 course_columns_optional = [
@@ -22,6 +22,8 @@ course_columns_optional = [
     "keep_assigned_room",
     "crn",
     "contact_hours",
+    "raw_preference",
+    "preference"
 ]
 
 room_columns = [
@@ -84,7 +86,7 @@ def read_data(filepath, required_columns=None, optional_columns=None):
     elif file_suffix == "csv":
         df = pd.read_csv(filepath)
     else:
-        raise Exception("filepath passed to read_data must formatted as excel or csv")
+        raise Exception("filepath passed to read_data must formatted as excel or csv. Filename was: " + filepath)
 
     df.columns = [standardize_column_name(col) for col in df.columns]
 
@@ -101,6 +103,7 @@ def read_data(filepath, required_columns=None, optional_columns=None):
 
     return df
 
+
 def mark_occurances(course_data):
     """
     Input: 
@@ -115,20 +118,33 @@ def mark_occurances(course_data):
 
     course_data["repeated_section"] = course_data['subject_course_section'].eq(course_data['subject_course_section'].shift())
     course_data['twice_repeated_section'] = (course_data['repeated_section'] & course_data['repeated_section'].eq(  course_data['repeated_section'].shift()))
+    # confirm no section meets more than 3 times a week
+    course_data['three_times_repeated_section'] = (course_data['twice_repeated_section'] & course_data['twice_repeated_section'].eq(course_data['twice_repeated_section'].shift()))
+    course_data['four_times_repeated_section'] = (course_data['three_times_repeated_section'] & course_data['three_times_repeated_section'].eq(course_data['three_times_repeated_section'].shift()))
+    course_data['five_times_repeated_section'] = (course_data['four_times_repeated_section'] & course_data['four_times_repeated_section'].eq(course_data['four_times_repeated_section'].shift()))
+
+    # print(course_data[course_data['three_times_repeated_section']])
+    # print(course_data[course_data['three_times_repeated_section']]['subject_course_section'])
+
+    # print(course_data[course_data['four_times_repeated_section']])
+    # print(course_data[course_data['four_times_repeated_section']]['subject_course_section'])
     course_data["occurance"] = course_data.apply(
         lambda row: 0 if not row["repeated_section"]
         else (1 if not row["twice_repeated_section"]
-              else 2),
+            else (2 if not row["three_times_repeated_section"]
+                else (3 if not row["four_times_repeated_section"]
+                    else 4
+            ))),
         axis=1).astype(str)
-    # confirm no section meets more than 3 times a week
-    course_data['three_times_repeated_section'] = (course_data['twice_repeated_section'] & course_data['twice_repeated_section'].eq(course_data['twice_repeated_section'].shift()))
-
-    assert not course_data['three_times_repeated_section'].any()
+    assert not course_data['five_times_repeated_section'].any()
 
     #remove helper colummns created earlier
     del course_data['repeated_section']
     del course_data['twice_repeated_section']
     del course_data['three_times_repeated_section']
+    del course_data['four_times_repeated_section']
+    del course_data['five_times_repeated_section']
+
 
     # create subject_course_section_occurrence as a true unique identifier for sections
     course_data["subject_course_section_occurrence"] = course_data["subject_course_section"] + "_" + course_data["occurance"]
