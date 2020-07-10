@@ -2,54 +2,104 @@ import pandas as pd
 import csv
 import matplotlib.pyplot as plt
 import data_process as dp
-# import set_process as sp
+import numpy as np
+import set_process as sp
 
 
-def plot_delivery_mode_satisfied(output_filepath):
+def plot_delivery_mode_satisfied(output_filepath, by_department=False):
 	"""
 	Return a bar plot representing fraction of satisfied delievery modes.
 
 	Parameters
 	----------
 	output_filepath : str
-	Filepath to output file.
+		Filepath to output file.
+	by_department : bool, optional
+		If True, each bar represents the fraction of satisfied delivery modes
+		(all modes aggregates) for each department. If False, bar plot
+		represents the fraction of satisfied raw preferences.
 
 	Returns
 	-------
-	plt : matplotlib.pyplot module
+	ax : AxesSubplot
+		Axes of figure
 	satisfied_count : dict(str, float)
-	Maps raw preference to number of times it is satisfied.
+		Maps raw preference to number of times it is satisfied.
 	total_count : dict(str, float)
-	Maps raw preference to total number of times it appears in the data.
+		Maps raw preference to total number of times it appears in the data.
 	"""
-	model_output_column = "delivery_mode"
-	preference_column = "preference"
-	plot_by_column = "raw_preference"
+	raw_preferences = {"Hybrid", "Residential", "Remote"}
 
 	satisfied_count = {}
 	total_count = {}
 	with open(output_filepath, "r") as file:
 		reader = csv.DictReader(file)
 		for row in reader:
-			model_output = row[model_output_column]
-			preference = row[preference_column]
+			model_output = row["delivery_mode"]
+			preference = row["preference"]
 			model_output_formatted, preference_formatted = format_delivery_mode(
-			model_output, preference)
+				model_output, preference)
 
-			bar_name = row[plot_by_column].strip()
-			if bar_name not in satisfied_count.keys():
-				satisfied_count[bar_name] = 0
-				total_count[bar_name] = 0
+			subject_code = row["subject_code"]
+			# Add subject_code as key if not already present
+			if subject_code not in satisfied_count.keys():
+				satisfied_count[subject_code] = {p: 0 for p in raw_preferences}
+				total_count[subject_code] = {p: 0 for p in raw_preferences}
 
+			raw_preference = row["raw_preference"].strip()
+			# Increment if raw preference is satisfied
 			if model_output_formatted in preference_formatted:
-				satisfied_count[bar_name] += 1
-			total_count[bar_name] += 1
+				satisfied_count[subject_code][raw_preference] += 1
+			total_count[subject_code][raw_preference] += 1
 
-	percent_satisfied = {p: satisfied_count[p] / total_count[p]
-	for p in satisfied_count.keys()}
-	plt.bar(percent_satisfied.keys(), percent_satisfied.values())
-	plt.title("Fraction of Satisfied Delivery Modes")
-	return plt, satisfied_count, total_count
+	# aggregate data either by department or by raw preference
+	satisfied_final, total_final, percent_satisfied = aggregate_data(
+		satisfied_count, total_count, by_department)
+
+	ax = plt.gca()
+	bars = ax.bar(percent_satisfied.keys(), percent_satisfied.values())
+	ax.set_title("Fraction of Satisfied Delivery Modes")
+
+	# Add values on top of bars
+	if not by_department:
+		ax = add_bar_values(ax, bars)
+	else:
+		ax.tick_params(axis="x", rotation=90, labelsize=7)
+
+	return satisfied_final, total_final, ax
+
+
+def aggregate_data(satisfied_count, total_count, by_department):
+	subject_codes = set(satisfied_count.keys())
+	if by_department:
+		satisfied_final = {code: sum(satisfied_count[code].values())
+						   for code in subject_codes}
+		total_final = {code: sum(total_count[code].values())
+					   for code in subject_codes}
+	else:
+		satisfied_final = {}
+		total_final = {}
+		for raw_pref in raw_preferences:
+			satisfied_final[raw_pref] = sum(satisfied_count[code][raw_pref]
+											for code in subject_codes)
+			total_final[raw_pref] = sum(total_count[code][raw_pref]
+										for code in subject_codes)
+	sorted_keys = np.sort(list(satisfied_final.keys()))
+	percent_satisfied = {k: satisfied_final[k] / total_final[k]
+						 for k in sorted_keys}
+	return satisfied_final, total_final, percent_satisfied
+
+
+def add_bar_values(ax, bars):
+	"""Add values on top of each bar."""
+	xlocs = ax.get_xticks()
+	for bar in bars:
+		x_pos = bar.get_x()
+		y_pos = bar.get_height()
+		bar_width = bar.get_width()
+		ax.text(x_pos + bar_width / 2, y_pos + 0.01, round(y_pos, 3),
+				ha="center")
+	return ax
 
 
 def format_delivery_mode(*args):
@@ -161,9 +211,8 @@ def count_consistent_assignments(output_filepath_a, output_filepath_b):
 
 
 if __name__ == "__main__":
-	output_filepath = ("/home/mtonbari/Projects/covid_recovery/Output/room_assignment_opt_output_full_enrollment_2020_Class_20_percent_social_distance_preferences_contact_max.csv")
-	plt, satisfied, total = plot_delivery_mode_satisfied(output_filepath)
+	output_filepath = "Output/room_assignment_opt_output_full_enrollment_2020_Class_20_percent_social_distance_preferences_contact_max.csv"
+	satisfied, total, ax = plot_delivery_mode_satisfied(output_filepath, True)
 	for k in satisfied.keys():
 	    print(k +":", satisfied[k] / total[k])
 	plt.show()
-	print(type(plt))
