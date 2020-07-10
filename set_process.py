@@ -23,6 +23,11 @@ course_columns = [
     'Course 12 Subject Code_Course#_Section_CRN_Credits'
 ]
 
+all_permissible_delivery_mode = {"residential_spread",
+                                         "hybrid_split",
+                                         "hybrid_touchpoint",
+                                         "remote"}
+
 
 def get_section_set(course_data, all_course):
     """
@@ -264,7 +269,6 @@ def get_preferred_room_sets(course_data,
             delivery_mode = delivery_mode_section_room_dict[section, room]
             if delivery_mode in permissible_delivery_mode_set:
                 preferred_room_set.add(room)
-        print("")
 
     preferred_section_room_dictionary = dict()
     for room, available_section_set in section_room_dictionary.items():
@@ -667,7 +671,9 @@ def get_contact_hours(all_section,
                       meeting_hours_section_dictionary,
                       num_weekly_meeting_days_section_dictionary,
                       minimum_section_contact_days,
-                      weeks_in_semester):
+                      weeks_in_semester,
+                      preferred_delivery_mode_section_dict=None):
+
     """
     Input:
         all_section - set(str): set of all sections available in the optimization problem
@@ -688,24 +694,31 @@ def get_contact_hours(all_section,
     delivery_mode_section_room_dict = dict()
     for section in all_section:
         for room in all_room:
+            if preferred_delivery_mode_section_dict is not None:
+                preferred_delivery_mode_set = preferred_delivery_mode_section_dict[section]
+            else:
+                preferred_delivery_mode_set = all_permissible_delivery_mode
             total_contact_hours, delivery_mode = get_contact_hours_helper(capacity=capacity_room_dictionary[room],
                                                                           enrollment=enrollment_section_dictionary[section],
                                                                           meeting_hours=meeting_hours_section_dictionary[section],
                                                                           weekly_meeting_days=num_weekly_meeting_days_section_dictionary[section],
                                                                           minimum_section_contact_days=minimum_section_contact_days,
-                                                                          weeks_in_semester=weeks_in_semester)
+                                                                          weeks_in_semester=weeks_in_semester,
+                                                                          preferred_delivery_mode_set=preferred_delivery_mode_set)
+
             total_contact_hours_section_room_dict[section, room] = total_contact_hours
             delivery_mode_section_room_dict[section, room] = delivery_mode
 
     return total_contact_hours_section_room_dict, delivery_mode_section_room_dict
 
 
-def get_contact_hours_helper_depricated(capacity,
-                                      enrollment,
-                                      meeting_hours,
-                                      weekly_meeting_days,
-                                      minimum_section_contact_days,
-                                      weeks_in_semester):
+def get_contact_hours_helper(capacity,
+                             enrollment,
+                             meeting_hours,
+                             weekly_meeting_days,
+                             minimum_section_contact_days,
+                             weeks_in_semester,
+                             preferred_delivery_mode_set):
     """
     Input:
         capacity - int: capacity for the room on interest
@@ -722,7 +735,10 @@ def get_contact_hours_helper_depricated(capacity,
     """
 
     if enrollment <= capacity:
-        return meeting_hours * weekly_meeting_days, "residential_spread"
+        if "residential_spread" in preferred_delivery_mode_set:
+            return meeting_hours * weekly_meeting_days, "residential_spread"
+        else:
+            return meeting_hours * (weekly_meeting_days - 1), "residential_spread"
     elif enrollment <= weekly_meeting_days * capacity:
         for limited_weekly_meeting_days in [2, weekly_meeting_days + 1]:
             if enrollment <= limited_weekly_meeting_days * capacity:
@@ -730,20 +746,20 @@ def get_contact_hours_helper_depricated(capacity,
                 contact_hours = meeting_hours * contact_days_per_week
                 return contact_hours, "hybrid_split"
     elif enrollment <= weeks_in_semester * weekly_meeting_days * capacity / minimum_section_contact_days:
+
         avg_contact_days_per_week = floor(weeks_in_semester * weekly_meeting_days * capacity / enrollment) / weeks_in_semester
         contact_hours = meeting_hours * avg_contact_days_per_week
         return contact_hours, "hybrid_touchpoint"
     else:
         return 0, "remote"
 
-
-
-def get_contact_hours_helper(capacity,
-                            enrollment,
-                            meeting_hours,
-                            weekly_meeting_days,
-                            minimum_section_contact_days,
-                            weeks_in_semester):
+def get_contact_hours_no_mixing_helper(capacity,
+                                      enrollment,
+                                      meeting_hours,
+                                      weekly_meeting_days,
+                                      minimum_section_contact_days,
+                                      weeks_in_semester,
+                                      preferred_delivery_mode_set):
     """
     Input:
         capacity - int: capacity for the room on interest
@@ -755,24 +771,40 @@ def get_contact_hours_helper(capacity,
         delivery_mode -  str: delivery mode that the section must take, it's to be taught in that room
                               possible values are: "residential_spread", "hybrid_split", "hybrid_touchpoint", "remote"
 
-    Inteneded as a helper method to get_contact_hours.
+    Inteneded as a helper method to get_contact_hours. 
+    It is an alternative function that may be called instead of get_contact_hours_helper. The difference is in the contact_hours calculation for the hyrid_split mode.
+    Specifically, this method involves distinct cohorts of students so that students in each cohort never meet students from the other cohorts when attending their class for the section
     All input paramters are specific to a given room and section.
-    """
 
+    TODO: calculation of delivery_mode and contact_hours should be separate methods
+    TODO: thoughtful approach to calculating contact_hours when enrollment = 0. But actually this does not matter since contact hours is multiplied by enrollment in the objective function anyway
+    """
     if enrollment <= capacity:
-        return meeting_hours * weekly_meeting_days, "residential_spread"
-    elif enrollment <= weekly_meeting_days * capacity:
-        for limited_weekly_meeting_days in [2, weekly_meeting_days + 1]:
-            if weekly_meeting_days in {2, 3}:
-                contact_hours = meeting_hours
-                return contact_hours, "hybrid_split"
-            elif meeting_days == 4
+        delivery_mode = "residential_spread"
+    elif capacity < enrollment and enrollment <= weekly_meeting_days * capacity:
+        delivery_mode = "hybrid_split"
+    elif enrollment <= weeks_in_semester * weekly_meeting_days * capacity / minimum_section_contact_days:
+        delivery_mode = "hybrid_touchpoint"
+    else:
+        delivery_mode = "remote"
+
+    if enrollment == 0:
+        contact_hours = 0
+    elif enrollment <= capacity and "residential_spread" in preferred_delivery_mode_set:
+        contact_hours = meeting_hours * weekly_meeting_days
+    elif weekly_meeting_days in {2,3} and enrollment <= weekly_meeting_days * capacity:
+        contact_hours = meeting_hours
+    elif weekly_meeting_days == 4 and 2 * capacity < enrollment and enrollment <= 4 * capacity:
+        contact_hours = meeting_hours
+    elif weekly_meeting_days == 4 and enrollment <= 2 * capacity:
+        contact_hours = 2 * meeting_hours
     elif enrollment <= weeks_in_semester * weekly_meeting_days * capacity / minimum_section_contact_days:
         avg_contact_days_per_week = floor(weeks_in_semester * weekly_meeting_days * capacity / enrollment) / weeks_in_semester
         contact_hours = meeting_hours * avg_contact_days_per_week
-        return contact_hours, "hybrid_touchpoint"
     else:
-        return 0, "remote"
+        contact_hours = 0
+
+    return contact_hours, delivery_mode
 
 
 def get_priority_boost(course_data,
@@ -870,7 +902,7 @@ def get_unit_building_sets(unit_requirements_data):
     fraction_unit_building_dict = pd.Series(unit_requirements_data["fraction"].values,index=unit_building_tuples).to_dict()
     return fraction_unit_building_dict
 
-def get_permissible_delivery_mode(course_data,
+def get_preferred_delivery_mode(course_data,
                                  all_section):
     """
     Input:
@@ -880,10 +912,6 @@ def get_permissible_delivery_mode(course_data,
         permissible_delivery_mode_section_dict - dict{str: set(str)}: maps a section to a list of the delivery modes it may be taught in
 
     """
-    all_permissible_delivery_mode = {"residential_spread",
-                                         "hybrid_split",
-                                         "hybrid_touchpoint",
-                                         "remote"}
 
     if 'preference' not in course_data.columns: 
         permissible_delivery_mode_section_dict = {section: all_permissible_delivery_mode for section in all_section}

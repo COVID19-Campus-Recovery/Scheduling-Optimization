@@ -20,23 +20,37 @@ class RoomAssignmentPreferencesContactyOpt(RoomAssignmentContactyOpt):
     def get_all_sets_params(self):
         super().get_all_sets_params()
 
-        self.permissible_delivery_mode_section_dict = sp.get_permissible_delivery_mode(self.course_data,
+        self.preferred_delivery_mode_section_dict = sp.get_preferred_delivery_mode(self.course_data,
                                                                                       self.all_section
                                                                                       )
+
+        self.total_contact_hours_section_room_dict, self.delivery_mode_section_room_dict = sp.get_contact_hours(all_section=self.all_section,
+                                                                                                                all_room=self.all_room,
+                                                                                                                capacity_room_dictionary=self.capacity_room_dictionary,
+                                                                                                                enrollment_section_dictionary=self.enrollment_section_dictionary,
+                                                                                                                meeting_hours_section_dictionary=self.meeting_hours_section_dictionary,
+                                                                                                                num_weekly_meeting_days_section_dictionary=self.num_weekly_meeting_days_section_dictionary,
+                                                                                                                minimum_section_contact_days=self.minimum_section_contact_days,
+                                                                                                                weeks_in_semester=self.weeks_in_semester,
+                                                                                                                preferred_delivery_mode_section_dict=self.preferred_delivery_mode_section_dict,
+                                                                                                                )
 
         self.preferred_room_section_dictionary, self.preferred_section_room_dictionary = sp.get_preferred_room_sets(self.course_data,
                                                                                                                     self.room_data,
                                                                                                                     self.room_section_dictionary,
                                                                                                                     self.section_room_dictionary,
-                                                                                                                    self.permissible_delivery_mode_section_dict,
+                                                                                                                    self.preferred_delivery_mode_section_dict,
                                                                                                                     self.delivery_mode_section_room_dict)
+
+
+
         return
 
 
     def set_mode_preferences_objective(self, model,model_vars, index, priority):
         X_xr = model_vars["X_xr"]
         model.setObjectiveN(quicksum(X_xr[(section, room)] for section in self.all_section for room in self.preferred_room_section_dictionary[section]) +
-                            quicksum(1 - quicksum(X_xr[(section, room)] for room in self.room_section_dictionary[section]) for section in self.all_section if "remote" in self.permissible_delivery_mode_section_dict[section]),
+                            quicksum(1 - quicksum(X_xr[(section, room)] for room in self.room_section_dictionary[section]) for section in self.all_section if "remote" in self.preferred_delivery_mode_section_dict[section]),
                            index=index,
                            priority=priority,
                            reltol=self.preference_objective_tollerance)
@@ -66,8 +80,8 @@ if __name__ == "__main__":
     #solve model
     model.optimize()
 
-    assign_opt.output_result(course_data=course_data,
-                            room_data=room_data,
-                            model=model,
-                            output_path = output_data_filepath,
-                            )
+    # assign_opt.output_result(course_data=course_data,
+    #                         room_data=room_data,
+    #                         model=model,
+                            # output_path = output_data_filepath,
+                            # )
