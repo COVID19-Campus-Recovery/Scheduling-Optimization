@@ -6,7 +6,8 @@ import numpy as np
 import set_process as sp
 
 
-def plot_delivery_mode_satisfied(output_filepath, by_department=False):
+def plot_delivery_mode_satisfied(output_filepath, raw_preferences,
+								 by_department=False):
 	"""
 	Return a bar plot representing fraction of satisfied delievery modes.
 
@@ -14,11 +15,13 @@ def plot_delivery_mode_satisfied(output_filepath, by_department=False):
 	----------
 	output_filepath : str
 		Filepath to output file.
+	raw_preferences : set of str
+		Contains raw preferences to consider when plotting.
 	by_department : bool, optional
-		If True, each bar represents the fraction of satisfied delivery modes
-		(all modes aggregates) for each department. If False, bar plot
-		represents the fraction of satisfied raw preferences.
-
+		If True, each bar represents the aggregate fraction of satisfied 
+		delivery modes (in raw_preferences) for each department. 
+		If False, bar plot represents the fraction of satisfied raw preferences.
+		
 	Returns
 	-------
 	ax : AxesSubplot
@@ -28,7 +31,6 @@ def plot_delivery_mode_satisfied(output_filepath, by_department=False):
 	total_count : dict(str, float)
 		Maps raw preference to total number of times it appears in the data.
 	"""
-	raw_preferences = {"Hybrid", "Residential", "Remote"}
 
 	satisfied_count = {}
 	total_count = {}
@@ -48,28 +50,42 @@ def plot_delivery_mode_satisfied(output_filepath, by_department=False):
 
 			raw_preference = row["raw_preference"].strip()
 			# Increment if raw preference is satisfied
-			if model_output_formatted in preference_formatted:
-				satisfied_count[subject_code][raw_preference] += 1
-			total_count[subject_code][raw_preference] += 1
+			if raw_preference in raw_preferences:
+				total_count[subject_code][raw_preference] += 1
+				if model_output_formatted in preference_formatted:
+					satisfied_count[subject_code][raw_preference] += 1
 
-	# aggregate data either by department or by raw preference
+	# Aggregate data either by department or by raw preference
 	satisfied_final, total_final, percent_satisfied = aggregate_data(
-		satisfied_count, total_count, by_department)
+		satisfied_count, total_count, raw_preferences, by_department)
 
 	ax = plt.gca()
 	bars = ax.bar(percent_satisfied.keys(), percent_satisfied.values())
-	ax.set_title("Fraction of Satisfied Delivery Modes")
+	if not by_department:
+		ax.set_title("Fraction of Satisfied Delivery Modes")
+	else:
+		if len(raw_preferences) > 1:
+			prefs_string = ", ".join(raw_preferences)
+			ax.set_title("Fraction of Satisfied Delivery Modes: "
+						 + prefs_string)
+		else:
+			ax.set_title("Fraction of Satisfied "
+						 + next(iter(raw_preferences))
+						 + " Delivery")
 
 	# Add values on top of bars
 	if not by_department:
 		ax = add_bar_values(ax, bars)
 	else:
 		ax.tick_params(axis="x", rotation=90, labelsize=7)
+		alphas = [1, 0.5] * len(bars)
+		for i, bar in enumerate(bars):
+			bar.set_alpha(alphas[i])
 
 	return satisfied_final, total_final, ax
 
 
-def aggregate_data(satisfied_count, total_count, by_department):
+def aggregate_data(satisfied_count, total_count, raw_preferences, by_department):
 	subject_codes = set(satisfied_count.keys())
 	if by_department:
 		satisfied_final = {code: sum(satisfied_count[code].values())
@@ -85,8 +101,10 @@ def aggregate_data(satisfied_count, total_count, by_department):
 			total_final[raw_pref] = sum(total_count[code][raw_pref]
 										for code in subject_codes)
 	sorted_keys = np.sort(list(satisfied_final.keys()))
-	percent_satisfied = {k: satisfied_final[k] / total_final[k]
-						 for k in sorted_keys}
+	percent_satisfied = {}
+	for k in sorted_keys:
+		if total_final[k] != 0:
+			percent_satisfied[k] = satisfied_final[k] / total_final[k]
 	return satisfied_final, total_final, percent_satisfied
 
 
@@ -105,12 +123,12 @@ def add_bar_values(ax, bars):
 def format_delivery_mode(*args):
 	"""Format string arguments.
 	
-	Lowercase all letters and remove leading/trailing whitespaces. If the 
+	Lowercase all letters and remove leading/trailing whitespaces. If the
 	string is multiple comma-separated words, split the string into a list
-	containing each individual word. 
+	containing each individual word.
 
-	"Residential" and "Hybrid" are changed to "residential_spread" and
-	"hybrid_split,hybrid_touchpoint,residential_spread", respectively,
+	If needed, "Residential" and "Hybrid" are changed to "residential_spread" 
+	and "hybrid_split,hybrid_touchpoint,residential_spread", respectively,
 	to maintain consistency across columns.
 	"""
 	formatted = []
@@ -212,7 +230,11 @@ def count_consistent_assignments(output_filepath_a, output_filepath_b):
 
 if __name__ == "__main__":
 	output_filepath = "Output/room_assignment_opt_output_full_enrollment_2020_Class_20_percent_social_distance_preferences_contact_max.csv"
-	satisfied, total, ax = plot_delivery_mode_satisfied(output_filepath, True)
+	raw_preferences = {"Residential"}
+	satisfied, total, ax = plot_delivery_mode_satisfied(output_filepath,
+														raw_preferences,
+														True)
 	for k in satisfied.keys():
-	    print(k +":", satisfied[k] / total[k])
+		if total[k] != 0:
+			print(k + ":", satisfied[k] / total[k], total[k])
 	plt.show()
