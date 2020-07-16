@@ -117,6 +117,8 @@ def InputRoom(room_level_data_path,
     if isinstance(room_type,str):
         if room_type == "nonclass":
             room_out = room_out[room_out["use"] != "Class"]
+        elif room_type =="all":
+            pass
         else:
             room_out = room_out[room_out["use"] == room_type]
 
@@ -344,7 +346,7 @@ def InputCourse2020_adjust(course_2020_path,
 
     course_data_2020 = course_data_2020[(course_data_2020["Camp"] == "A") | (course_data_2020["Camp"] == "EM")]
     #course_data_2020["Cross List Max ENRL"] = course_data_2020["Cross List Max ENRL"].fillna(course_data_2020["Assumed Enrollment for Planning"])
-
+    course_data_2020.loc[course_data_2020["Assumed Enrollment for Planning"]==0,"Assumed Enrollment for Planning"] = course_data_2020["ENRL Actual"]
     course_2020_out = course_data_2020[["Subj Code", "Crse Num", "Sect", "Assumed Enrollment for Planning",
                                         "Days", "Start Time", "End Time", "Bldg", "Rm",
                                         "RDL", "CRN", "Contact Hrs", "Delivery Mode Preference"]]
@@ -403,16 +405,18 @@ def InputCourse2020_adjust(course_2020_path,
 
 
 
-
+    '''
     ## Adjust Enrollment
     updated_enrollment = pd.read_excel(updated_enrollment_path)
     updated_enrollment.drop_duplicates(keep="first", inplace=True)
     course_2020_out = course_2020_out.merge(updated_enrollment[["CRN", "Assumed Enrollment Updated"]], on="CRN", how="left")
     course_2020_out["Enrl"] = course_2020_out["Assumed Enrollment Updated"].fillna(course_2020_out["Enrollment"]).astype(int)
     course_2020_out = course_2020_out.drop(columns=["Enrollment", "Assumed Enrollment Updated"])
+    '''
 
 
-    course_2020_out = course_2020_out.rename(columns={"Enrl": "Enrollment", "Contact Hrs": "Contact Hours","Preference": "Raw Preference"})
+
+    course_2020_out = course_2020_out.rename(columns={"Assumed Enrollment Updated": "Enrollment", "Contact Hrs": "Contact Hours","Preference": "Raw Preference"})
     course_2020_out = course_2020_out[["Subject Code", "Course Number", "Course Section", "Enrollment","Days",
                                        "Begin Time", "End Time","Building Number", "Room", "Exclusively Online",
                                        "Room Use", "keep assigned room", "CRN", "Contact Hours","Raw Preference"]]
@@ -433,7 +437,7 @@ if __name__ == "__main__":
     room_input = InputRoom("../Documents/Madgie_Raw_Directory/Data/Room_Level_Data_20200522.xlsx",
                            "../Documents/Madgie_Raw_Directory/Data/20200604_CLSLAB_List.xlsx",
                            "../Documents/Madgie_Raw_Directory/Data/ISYE_FallSemesterScenarios_BuildingRooms.xlsx",
-                           room_type="Class")
+                           room_type="nonclass")
 
 
     # InputCourse2019(
