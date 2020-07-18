@@ -347,7 +347,8 @@ def InputCourse2020_adjust(course_2020_path,
     course_data_2020 = course_data_2020[(course_data_2020["Camp"] == "A") | (course_data_2020["Camp"] == "EM")]
     #course_data_2020["Cross List Max ENRL"] = course_data_2020["Cross List Max ENRL"].fillna(course_data_2020["Assumed Enrollment for Planning"])
     course_data_2020.loc[course_data_2020["Assumed Enrollment for Planning"]==0,"Assumed Enrollment for Planning"] = course_data_2020["ENRL Actual"]
-    course_2020_out = course_data_2020[["Subj Code", "Crse Num", "Sect", "Assumed Enrollment for Planning",
+
+    course_2020_out = course_data_2020[["Subj Code", "Crse Num", "Sect", "Assumed Enrollment for Planning","ENRL Actual",
                                         "Days", "Start Time", "End Time", "Bldg", "Rm",
                                         "RDL", "CRN", "Contact Hrs", "Delivery Mode Preference"]]
 
@@ -355,6 +356,7 @@ def InputCourse2020_adjust(course_2020_path,
     # Join the course data with room data
     course_2020_out["bldg_room"] = course_2020_out["Bldg"].astype(str) + "_" + course_2020_out["Rm"].astype(str)
     course_2020_out = course_2020_out.merge(room_input, on="bldg_room", how="left")
+    course_2020_out.loc[course_2020_out["capacity"]<course_2020_out["Assumed Enrollment for Planning"],"Assumed Enrollment for Planning"] = course_2020_out["ENRL Actual"]
 
     # Columns Formatting
     course_2020_out["Start Time"] = course_2020_out["Start Time"].astype(str).replace('\.0', '', regex=True)
@@ -437,7 +439,7 @@ if __name__ == "__main__":
     room_input = InputRoom("../Documents/Madgie_Raw_Directory/Data/Room_Level_Data_20200522.xlsx",
                            "../Documents/Madgie_Raw_Directory/Data/20200604_CLSLAB_List.xlsx",
                            "../Documents/Madgie_Raw_Directory/Data/ISYE_FallSemesterScenarios_BuildingRooms.xlsx",
-                           room_type="nonclass")
+                           room_type="Class")
 
 
     # InputCourse2019(
