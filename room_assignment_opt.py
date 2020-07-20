@@ -9,14 +9,94 @@ from abc import abstractmethod
 import data_process as dp
 import set_process as sp
 from generic_schedule_opt import GenericScheduleOpt
+import pickle
+import os
+
 
 class RoomAssignmentOpt(GenericScheduleOpt):
     
     model_description = "generic_room_assignment"
     informative_output_columns = ["subject_code", "course_number", "course_section", "bldg_room"]
-    
-    def __init__(self):
+
+    def __init__(self, save_sets_flag=False, read_sets_flag=False,
+                 sets_path=None):
         super().__init__()
+        self.read_sets_flag = read_sets_flag
+        if self.read_sets_flag:
+            self.save_sets_flag = False
+        else:
+            self.save_sets_flag = save_sets_flag
+        if self.read_sets_flag or self.save_sets_flag:
+            assert sets_path is not None
+            self.sets_path = sets_path
+        return
+
+    def __read_or_save_sets(self, mode):
+        """Either read sets from files or save sets to file
+    
+        Parameters
+        ----------
+        mode : {"wb", "rb"}
+            If "wb", then sets (which should already be defined) are written
+            to files whose names match the variable names.
+            If "rb", then sets are read from files.
+        """
+        assert mode == "rb" or mode == "wb"
+        path = os.path.join(
+            self.sets_path, "section_course_dict.pkl")
+        with open(path, mode) as f:
+            if mode == "rb":
+                self.section_course_dict = pickle.load(f)
+            elif mode == "wb":
+                pickle.dump(self.section_course_dict, f)
+
+        path = os.path.join(
+            self.sets_path, "room_section_dictionary.pkl")
+        with open(path, mode) as f:
+            if mode == "rb":
+                self.room_section_dictionary = pickle.load(f)
+            elif mode == "wb":
+                pickle.dump(self.room_section_dictionary, f)
+
+        path = os.path.join(
+            self.sets_path, "section_room_dictionary.pkl")
+        with open(path, mode) as f:
+            if mode == "rb":
+                self.section_room_dictionary = pickle.load(f)
+            elif mode == "wb":
+                pickle.dump(self.section_room_dictionary, f)
+
+        path = os.path.join(
+            self.sets_path, "section_timeslot_clash_dictionary.pkl")
+        with open(path, mode) as f:
+            if mode == "rb":
+                self.section_timeslot_clash_dictionary = pickle.load(f)
+            elif mode == "wb":
+                pickle.dump(self.section_timeslot_clash_dictionary, f)
+
+        path = os.path.join(
+            self.sets_path, "enrollment_section_dictionary.pkl")
+        with open(path, mode) as f:
+            if mode == "rb":
+                self.enrollment_section_dictionary = pickle.load(f)
+            elif mode == "wb":
+                pickle.dump(self.enrollment_section_dictionary, f)
+
+        path = os.path.join(
+            self.sets_path, "capacity_room_dictionary.pkl")
+        with open(path, mode) as f:
+            if mode == "rb":
+                self.capacity_room_dictionary = pickle.load(f)
+            elif mode == "wb":
+                pickle.dump(self.capacity_room_dictionary, f)
+
+        path = os.path.join(
+            self.sets_path, "timeslot_section_dictionary.pkl")
+        with open(path, mode) as f:
+            if mode == "rb":
+                self.timeslot_section_dictionary = pickle.load(f)
+            elif mode == "wb":
+                pickle.dump(self.timeslot_section_dictionary, f)
         return
 
     def get_all_sets_params(self):
@@ -26,20 +106,26 @@ class RoomAssignmentOpt(GenericScheduleOpt):
         self.all_timeslot = self.course_data['full_time'].unique()
         self.all_simple_timeslot = sp.get_all_simplieid_timeslot(self.all_timeslot)
 
-        print("setting course to section set")
-        self.section_course_dict = sp.get_section_set(self.course_data, self.all_course)
-        print("setting room to section set")
-        self.room_section_dictionary, self.section_room_dictionary = sp.get_room_sets(self.course_data, self.room_data,
-                                                                                      self.all_room, self.all_section)
-        print("setting time to section availability set")
-        self.section_timeslot_clash_dictionary = sp.get_sections_with_overlapping_time_slot(self.all_timeslot, self.all_simple_timeslot, self.all_section, self.course_data)
 
-        print("setting parameters")
-        self.enrollment_section_dictionary = sp.get_enrollement_per_section(self.course_data,
-                                                  enrollment_column='enrollment'
-                                                  )
-        self.capacity_room_dictionary = sp.get_room_capacity(self.room_data, capacity_column='capacity')
-        self.timeslot_section_dictionary = sp.get_course_time(self.course_data)
+        if self.read_sets_flag:
+            self.__read_or_save_sets("rb")
+        else:
+            print("setting course to section set")
+            self.section_course_dict = sp.get_section_set(self.course_data, self.all_course)
+            print("setting room to section set")
+            self.room_section_dictionary, self.section_room_dictionary = sp.get_room_sets(self.course_data, self.room_data,
+                                                                                          self.all_room, self.all_section)
+            print("setting time to section availability set")
+            self.section_timeslot_clash_dictionary = sp.get_sections_with_overlapping_time_slot(self.all_timeslot, self.all_simple_timeslot, self.all_section, self.course_data)
+
+            print("setting parameters")
+            self.enrollment_section_dictionary = sp.get_enrollement_per_section(self.course_data,
+                                                      enrollment_column='enrollment'
+                                                      )
+            self.capacity_room_dictionary = sp.get_room_capacity(self.room_data, capacity_column='capacity')
+            self.timeslot_section_dictionary = sp.get_course_time(self.course_data)
+        if self.save_sets_flag:
+            self.__read_or_save_sets("wb")
         pass
 
     def set_model_vars(self, model):

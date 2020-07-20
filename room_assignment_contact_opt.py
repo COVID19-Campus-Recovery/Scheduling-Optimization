@@ -6,40 +6,99 @@ import data_process as dp
 import set_process as sp
 from room_assignment_opt import RoomAssignmentOpt
 
+import pickle
+import os
+
 class RoomAssignmentContactyOpt(RoomAssignmentOpt):
     
     model_description = "contact_max"
     informative_output_columns = ["subject_code", "course_number", "course_section", "bldg_room", "delivery_mode", "in_person_hours", "preference", "mode"]
 
-    def __init__(self, course_data, room_data, minimum_section_contact_days, weeks_in_semester):
-        super().__init__()
+    def __init__(self, course_data, room_data, minimum_section_contact_days,
+                 weeks_in_semester, save_sets_flag=False, read_sets_flag=False,
+                 sets_path=None):
+        super().__init__(save_sets_flag, read_sets_flag, sets_path)
         self.course_data, self.course_data_exclusively_online = dp.separate_online_courses(course_data)
         self.room_data = room_data
         self.minimum_section_contact_days = int(minimum_section_contact_days)
         self.weeks_in_semester = int(weeks_in_semester)
         return
 
+    def __read_or_save_sets(self, mode):
+        """Either read sets from files or save sets to file
+    
+        Parameters
+        ----------
+        mode : {"wb", "rb"}
+            If "wb", then sets (which should already be defined) are written
+            to files whose names match the variable names.
+            If "rb", then sets are read from files.
+        """
+        assert mode == "rb" or mode == "wb"
+        path = os.path.join(
+            self.sets_path, "num_weekly_meeting_days_section_dictionary.pkl")
+        with open(path, mode) as f:
+            if mode == "rb":
+                self.num_weekly_meeting_days_section_dictionary = pickle.load(f)
+            elif mode == "wb":
+                pickle.dump(self.num_weekly_meeting_days_section_dictionary, f)
+
+        path = os.path.join(
+            self.sets_path, "meeting_hours_section_dictionary.pkl")
+        with open(path, mode) as f:
+            if mode == "rb":
+                self.meeting_hours_section_dictionary = pickle.load(f)
+            elif mode == "wb":
+                pickle.dump(self.meeting_hours_section_dictionary, f)
+
+        path = os.path.join(
+            self.sets_path, "total_contact_hours_section_room_dict.pkl")
+        with open(path, mode) as f:
+            if mode == "rb":
+                self.total_contact_hours_section_room_dict = pickle.load(f)
+            elif mode == "wb":
+                pickle.dump(self.total_contact_hours_section_room_dict, f)
+
+        path = os.path.join(
+            self.sets_path, "delivery_mode_section_room_dict.pkl")
+        with open(path, mode) as f:
+            if mode == "rb":
+                self.delivery_mode_section_room_dict = pickle.load(f)
+            elif mode == "wb":
+                pickle.dump(self.delivery_mode_section_room_dict, f)
+
+        path = os.path.join(
+            self.sets_path, "priority_boost_section_dict.pkl")
+        with open(path, mode) as f:
+            if mode == "rb":
+                self.priority_boost_section_dict = pickle.load(f)
+            elif mode == "wb":
+                pickle.dump(self.priority_boost_section_dict, f)
+        return
 
     def get_all_sets_params(self):
         super().get_all_sets_params()
-        self.num_weekly_meeting_days_section_dictionary = sp.get_num_weekly_meeting_days(self.timeslot_section_dictionary)
-        self.meeting_hours_section_dictionary = sp.get_meeting_hours(self.timeslot_section_dictionary)
-        self.total_contact_hours_section_room_dict, self.delivery_mode_section_room_dict = sp.get_contact_hours(all_section=self.all_section,
-                                                                                                                all_room=self.all_room,
-                                                                                                                capacity_room_dictionary=self.capacity_room_dictionary,
-                                                                                                                enrollment_section_dictionary=self.enrollment_section_dictionary,
-                                                                                                                meeting_hours_section_dictionary=self.meeting_hours_section_dictionary,
-                                                                                                                num_weekly_meeting_days_section_dictionary=self.num_weekly_meeting_days_section_dictionary,
-                                                                                                                minimum_section_contact_days=self.minimum_section_contact_days,
-                                                                                                                weeks_in_semester=self.weeks_in_semester
-                                                                                                                )
-        self.priority_boost_section_dict = sp.get_priority_boost(self.course_data,
-                                                                self.all_section)
-
+        if self.read_sets_flag:
+            self.__read_or_save_sets("rb")
+        else:
+            self.num_weekly_meeting_days_section_dictionary = sp.get_num_weekly_meeting_days(self.timeslot_section_dictionary)
+            self.meeting_hours_section_dictionary = sp.get_meeting_hours(self.timeslot_section_dictionary)
+            self.total_contact_hours_section_room_dict, self.delivery_mode_section_room_dict = sp.get_contact_hours(all_section=self.all_section,
+                                                                                                                    all_room=self.all_room,
+                                                                                                                    capacity_room_dictionary=self.capacity_room_dictionary,
+                                                                                                                    enrollment_section_dictionary=self.enrollment_section_dictionary,
+                                                                                                                    meeting_hours_section_dictionary=self.meeting_hours_section_dictionary,
+                                                                                                                    num_weekly_meeting_days_section_dictionary=self.num_weekly_meeting_days_section_dictionary,
+                                                                                                                    minimum_section_contact_days=self.minimum_section_contact_days,
+                                                                                                                    weeks_in_semester=self.weeks_in_semester
+                                                                                                                    )
+            self.priority_boost_section_dict = sp.get_priority_boost(self.course_data,
+                                                                     self.all_section)
+        if self.save_sets_flag:
+            self.__read_or_save_sets("wb")
         sp.remove_remote_rooms_availability(self.room_section_dictionary,
                                             self.section_room_dictionary,
                                             self.delivery_mode_section_room_dict)
-
 
     def set_model_vars(self, model):
         print("defining variables")
@@ -58,11 +117,18 @@ class RoomAssignmentContactyOpt(RoomAssignmentOpt):
         print("constraint: each section assigned to room")
         C_1 = model.addConstrs((quicksum(X_xr[(section,room)] for room in self.room_section_dictionary[section]) <= 1
                                  for section in self.all_section),"")
-
         print("constraint: at most one section in room at a given time")
-        C_2 = model.addConstrs((quicksum(X_xr[(section, room)] for section in set(self.all_section).intersection(set(self.section_room_dictionary[room])).intersection(set(self.section_timeslot_clash_dictionary[day_starttime]))) <= 1
-                                for room in self.all_room for day_starttime in self.all_simple_timeslot), "")
-
+        for room in self.all_room:
+            room_sections = set(self.section_room_dictionary[room])
+            for day_starttime in self.all_simple_timeslot:
+                timeslot_sections = set(
+                    self.section_timeslot_clash_dictionary[day_starttime])
+                curr_sections = room_sections.intersection(timeslot_sections)
+                lhs = quicksum(X_xr[(section, room)]
+                               for section in curr_sections)
+                model.addLConstr(lhs <= 1)
+        # C_2 = model.addConstrs((quicksum(X_xr[(section, room)] for section in set(self.all_section).intersection(set(self.section_room_dictionary[room])).intersection(set(self.section_timeslot_clash_dictionary[day_starttime]))) <= 1
+        #                         for room in self.all_room for day_starttime in self.all_simple_timeslot), "")
         return
 
     def set_contact_hours_objective(self, model, model_vars, index, priority):
