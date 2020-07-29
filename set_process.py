@@ -1,6 +1,7 @@
 from math import floor
 import numpy as np
 import pandas as pd
+from haversine import haversine
 
 all_day = ("M", "T", "W", "R", "F")
 
@@ -746,7 +747,6 @@ def get_contact_hours_helper(capacity,
                 contact_hours = meeting_hours * contact_days_per_week
                 return contact_hours, "hybrid_split"
     elif enrollment <= weeks_in_semester * weekly_meeting_days * capacity / minimum_section_contact_days:
-
         avg_contact_days_per_week = floor(weeks_in_semester * weekly_meeting_days * capacity / enrollment) / weeks_in_semester
         contact_hours = meeting_hours * avg_contact_days_per_week
         return contact_hours, "hybrid_touchpoint"
@@ -855,11 +855,11 @@ def get_unit_section_sets(course_data,
     return unit_section_dict, section_unit_dict
 
 
-def get_room_building_sets(all_room):
+def get_room_building_sets(all_room, course_data=None):
     """
     Input:
-        all_room - set(str): set of all rooms available in the optimization problem
-
+        all_room - list(str): set of all rooms available in the optimization problem
+        course_data - pd.DataFrame: properly formatted course dataframe
     Output:
         room_building_dict - dict{str: str}: maps each building to a set of all room in that building
         building_room_dict - dict{str: str}: maps each room to its corresponding building
@@ -872,17 +872,20 @@ def get_room_building_sets(all_room):
         "172_102, 172_224, 172_300, 172_101", then room_building_dict may contain the the key value paid:
         "172": {"172_102, 172_224, 172_300, 172_101"}
     """
-
-
+    all_room = set(all_room)
+    if course_data is not None:
+        rooms_from_course_data = set(str(row["building_number"]) + "_" + str(row["room"]) for index, row in course_data.iterrows())
+        all_room.update(rooms_from_course_data)
     room_building_dict = dict()
     building_room_dict = dict()
-    for room in all_room:
-        building = building_room.split("_")[0]
-        building_room_dict[room] = building
+    for bldg_room in all_room:
+        building = bldg_room.split("_")[0]
+        building_room_dict[bldg_room] = building
         if building in room_building_dict:
-            room_building_dict[building].add(room)
+            room_building_dict[building].add(bldg_room)
         else:
-            room_building_dict[building] = {room}
+            room_building_dict[building] = {bldg_room}
+
 
     return room_building_dict, building_room_dict
 
@@ -902,6 +905,18 @@ def get_unit_building_sets(unit_requirements_data):
     fraction_unit_building_dict = pd.Series(unit_requirements_data["fraction"].values,index=unit_building_tuples).to_dict()
     return fraction_unit_building_dict
 
+def get_assigned_delivery_mode(output_data):
+    """
+    Input:
+        output_data - pd.DataFrame: properly formatted output dataframe
+    Output:
+        output_delivery_mode_section_dict - dict{str: set(str)}: maps a section to a list of the delivery modes it may be taught in
+    """
+
+    output_delivery_mode_section_dict = pd.Series(output_data['delivery_mode'].values,index=output_data['subject_course_section_occurrence']).to_dict()
+    return output_delivery_mode_section_dict
+
+
 def get_preferred_delivery_mode(course_data,
                                  all_section):
     """
@@ -910,7 +925,6 @@ def get_preferred_delivery_mode(course_data,
         all_section - set(str): set of all sections available in the optimization problem
     Output:
         permissible_delivery_mode_section_dict - dict{str: set(str)}: maps a section to a list of the delivery modes it may be taught in
-
     """
 
     if 'preference' not in course_data.columns: 
@@ -918,6 +932,103 @@ def get_preferred_delivery_mode(course_data,
     else:
         permissible_delivery_mode_all = [{permissible_mode.strip() for permissible_mode in permissible_mode_full_str.split(",")} if type(permissible_mode_full_str) is str else all_permissible_delivery_mode for permissible_mode_full_str in course_data["preference"].values]
         permissible_delivery_mode_section_dict = pd.Series(permissible_delivery_mode_all,index=course_data['subject_course_section_occurrence']).to_dict()
-    # permissible_delivery_mode_section_dict = {section: all_permissible_delivery_mode for section in all_section}
-
     return permissible_delivery_mode_section_dict
+
+def get_existing_room_assignment_section_dict(course_data):
+
+    """
+    Input:
+        course_data - pd.DataFrame: properly formatted course dataframe
+    Output:
+        existing_room_assignment_section_dict - dict{str: str}: maps each section to its existing room assignment
+    """
+    if "building_number" not in course_data.columns or "room" not in course_data.columns:
+        raise Exception("course_data must include columns 'building_number' and 'room' in order to call get_existing_room_assignment_section_dict")
+
+    indecies_w_room_assignment = (course_data["room"].notnull()) & (course_data["building_number"].notnull())
+    subject_course_section_occurrence_list = course_data[indecies_w_room_assignment]['subject_course_section_occurrence'].tolist()
+    bldg_room_list = (course_data[indecies_w_room_assignment]["building_number"].astype(str) + "_" + course_data[indecies_w_room_assignment]["room"].astype(str)).tolist()
+    existing_room_assignment_section_dict = pd.Series(bldg_room_list,index=subject_course_section_occurrence_list).to_dict()
+    return existing_room_assignment_section_dict
+
+def get_output_room_section_dict(output_data):
+    """
+    Input:
+        output_data - pd.DataFrame: properly formatted output dataframe
+    Output:
+        output_room_section_map - dict{str: str}: maps each section to its assigned room in output_data
+    """
+
+    output_room_section_map = pd.Series(output_data['bldg_room'].values,index=output_data['subject_course_section_occurrence'].tolist()).to_dict()
+    return output_room_section_map
+
+def get_dist_between_buildings(building_location_data,
+                              all_building):
+    """
+    Input:
+        building_location_data - pd.DataFrame: properly formatted building location dataframe
+    Output:
+        dist_between_building_dict - dict{(str, str): float}: maps each pairs of buildings, to the distance between these buildings in meters
+    """
+
+    lat_building_dict = pd.Series(building_location_data["latitude"].values,index=building_location_data['building_number']).to_dict()
+    lng_building_dict = pd.Series(building_location_data["longitude"].values,index=building_location_data['building_number']).to_dict()
+
+    building_w_location = building_location_data['building_number'].tolist()
+    building_w_location_pair = [(building_1, building_2) for building_1 in building_w_location for building_2 in building_w_location]
+    all_building_pair = [(building_1, building_2) for building_1 in all_building for building_2 in all_building]
+    building_wo_location_pair = [building_pair for building_pair in all_building_pair if building_pair not in building_w_location_pair]
+    
+    dist_between_building_dict = dict()
+    for building_1, building_2 in building_w_location_pair:
+        distance = haversine((lat_building_dict[building_1], lng_building_dict[building_1]),
+                                 (lat_building_dict[building_2], lng_building_dict[building_2]),
+                                 unit='m')
+        dist_between_building_dict[building_1, building_2] = distance
+    
+    avg_building_dist = sum(dist_between_building_dict.values())/len(dist_between_building_dict.values())
+    
+    for building_1, building_2 in building_wo_location_pair:
+        dist_between_building_dict[building_1, building_2] = avg_building_dist
+
+    return dist_between_building_dict
+
+def get_reassignment_cost(all_section,
+                          all_room,
+                          dist_between_building_dict,
+                          existing_room_assignment_section_dict,
+                          building_room_dict,
+                          same_building_penalty=50):
+    """
+    Input:
+        all_section - set(str): set of all sections available in the optimization problem
+        all_room - set(str): set of all rooms available in the optimization problem
+        dist_between_building_dict - dict{(str, str): float}: maps each pairs of buildings, to the distance between these buildings in meters
+        existing_room_assignment_section_dict - dict{str: set(str)}: maps each section to its existing room assignment
+        building_room_dict - dict{str: str}: maps each room to its corresponding building
+        delta - float: if two rooms are in the same building, then the cost of reassignment bewteen these two rooms will be equal to: delta * min(dist_between_building_dict.values())
+    Output:
+        reassginment_cost_section_room_dict - dict{(str, str): float} - maps a (section, room) pair to the cost of reassigning the section to that room
+    """
+    # dist_between_diff_building_dict = {building_pair: distance for building_pair, distance in dist_between_building_dict.items() if distance != 0}
+    # same_building_penalty = delta * min(dist_between_diff_building_dict.values())
+    # print("same_building_penalty")
+    # print(same_building_penalty)
+    reassginment_cost_section_room_dict = dict()
+    for section in all_section:
+        if section in existing_room_assignment_section_dict:
+            existing_room_assignment = existing_room_assignment_section_dict[section]
+            existing_building_assignment = building_room_dict[existing_room_assignment]
+            for room in all_room:
+                building = building_room_dict[room]
+                if existing_room_assignment == room:
+                    penalty = 0
+                elif existing_building_assignment == building:
+                    penalty = same_building_penalty
+                else:
+                    penalty = dist_between_building_dict[existing_building_assignment, building]
+                reassginment_cost_section_room_dict[section, room] = penalty
+        else:
+            for room in all_room:
+                reassginment_cost_section_room_dict[section, room] = 0
+    return reassginment_cost_section_room_dict

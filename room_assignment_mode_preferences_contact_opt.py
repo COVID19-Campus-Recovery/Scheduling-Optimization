@@ -6,10 +6,10 @@ import data_process as dp
 import set_process as sp
 from room_assignment_contact_opt import RoomAssignmentContactyOpt
 
-class RoomAssignmentPreferencesContactyOpt(RoomAssignmentContactyOpt):
+class RoomAssignmentModePreferencesContactyOpt(RoomAssignmentContactyOpt):
     
-    model_description = "preferences_contact_max"
-    informative_output_columns = ["subject_code", "course_number", "course_section", "bldg_room", "delivery_mode", "raw_preference",  "preference"]
+    model_description = "mode_preferences_contact_max"
+    informative_output_columns = ["subject_code", "course_number", "course_section", "bldg_room", "delivery_mode", "in_person_hours", "preference"]
 
     def __init__(self, course_data, room_data, minimum_section_contact_days, weeks_in_semester, preference_objective_tollerance):
         super().__init__(course_data, room_data, minimum_section_contact_days, weeks_in_semester)
@@ -66,13 +66,13 @@ class RoomAssignmentPreferencesContactyOpt(RoomAssignmentContactyOpt):
 
 if __name__ == "__main__":
 
-    course_data_filepath, room_data_filepath, output_data_filepath, minimum_section_contact_days, weeks_in_semester = RoomAssignmentPreferencesContactyOpt.read_filenames(sys.argv)
+    course_data_filepath, room_data_filepath, output_data_filepath, minimum_section_contact_days, weeks_in_semester = RoomAssignmentModePreferencesContactyOpt.read_filenames(sys.argv)
 
     course_data = dp.clean_course_data(course_data_filepath)
     room_data = dp.clean_room_data(room_data_filepath)
 
     #generate model
-    assign_opt = RoomAssignmentPreferencesContactyOpt(course_data, room_data, minimum_section_contact_days, weeks_in_semester, 0.001)
+    assign_opt = RoomAssignmentModePreferencesContactyOpt(course_data, room_data, minimum_section_contact_days, weeks_in_semester, 0.01)
     model = assign_opt.construct_model()
     model.update()
     model.printStats()
@@ -80,8 +80,8 @@ if __name__ == "__main__":
     #solve model
     model.optimize()
 
-    # assign_opt.output_result(course_data=course_data,
-    #                         room_data=room_data,
-    #                         model=model,
-                            # output_path = output_data_filepath,
-                            # )
+    assign_opt.output_result(course_data=course_data,
+                            room_data=room_data,
+                            model=model,
+                            output_path = output_data_filepath,
+                            )

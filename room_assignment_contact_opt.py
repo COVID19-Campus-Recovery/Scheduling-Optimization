@@ -9,7 +9,7 @@ from room_assignment_opt import RoomAssignmentOpt
 class RoomAssignmentContactyOpt(RoomAssignmentOpt):
     
     model_description = "contact_max"
-    informative_output_columns = ["subject_code", "course_number", "course_section", "bldg_room", "delivery_mode", "in_person_hours", "preference", "mode"]
+    informative_output_columns = ["subject_code", "course_number", "course_section", "bldg_room", "delivery_mode", "in_person_hours", "preference"]
 
     def __init__(self, course_data, room_data, minimum_section_contact_days, weeks_in_semester):
         super().__init__()
@@ -17,8 +17,8 @@ class RoomAssignmentContactyOpt(RoomAssignmentOpt):
         self.room_data = room_data
         self.minimum_section_contact_days = int(minimum_section_contact_days)
         self.weeks_in_semester = int(weeks_in_semester)
+        self.contact_hours_objective_tollerance = 0
         return
-
 
     def get_all_sets_params(self):
         super().get_all_sets_params()
@@ -70,7 +70,8 @@ class RoomAssignmentContactyOpt(RoomAssignmentOpt):
         model.setObjectiveN(quicksum(self.total_contact_hours_section_room_dict[section, room] * self.enrollment_section_dictionary[section] * self.priority_boost_section_dict[section] * X_xr[(section, room)] \
                            for section in self.all_section for room in self.room_section_dictionary[section]),
                             index=index,
-                            priority=priority)
+                            priority=priority,
+                            reltol=self.contact_hours_objective_tollerance)
         return
 
     def set_objective(self, model, model_vars):
