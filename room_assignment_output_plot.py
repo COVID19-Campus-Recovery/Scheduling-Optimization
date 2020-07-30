@@ -2,8 +2,42 @@ import pandas as pd
 import csv
 import matplotlib.pyplot as plt
 import data_process as dp
-import numpy as np
 import set_process as sp
+
+
+def plot_room_assignment_changes(output_filepath, course_filepath):
+
+	"""
+	Input:
+		output_filepath - str: filepath to output data
+		course_filepath - str: filepath to course data
+	"""
+	output_data = dp.clean_room_assignment_output_data(output_filepath)
+	course_data = dp.clean_course_data(course_filepath)
+
+	original_room_section_map = sp.get_existing_room_assignment_section_dict(course_data)
+	output_room_section_map = sp.get_output_room_section_dict(output_data) #need to implement
+	output_delivery_mode_section_dict = sp.get_assigned_delivery_mode(output_data)
+	count_room_asignmment_change_dict = dict()
+	count_room_asignmment_change_dict["remote"] = 0
+	count_room_asignmment_change_dict["same_room"] = 0
+	count_room_asignmment_change_dict["same_building"] = 0
+	count_room_asignmment_change_dict["different_building"] = 0
+	for section, original_room in original_room_section_map.items():
+		if output_delivery_mode_section_dict[section] == 'remote':
+			count_room_asignmment_change_dict["remote"] += 1
+		elif output_room_section_map[section] == original_room:
+			count_room_asignmment_change_dict["same_room"] += 1
+		elif output_room_section_map[section].split("_")[1] == original_room.split("_")[1]:
+			count_room_asignmment_change_dict["same_building"] += 1
+		else:
+			count_room_asignmment_change_dict["different_building"] += 1
+
+	plt.bar(count_room_asignmment_change_dict.keys(), count_room_asignmment_change_dict.values())
+	plt.ylabel('number sections', fontsize=16)
+	plt.xticks(fontsize=10)
+	plt.title("Room assignment changes")	
+	return plt
 
 
 def plot_delivery_mode_satisfied(output_filepath, raw_preferences,
