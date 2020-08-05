@@ -155,16 +155,20 @@ class RoomAssignmentOpt(GenericScheduleOpt):
         # Merge optimization result with input data
         # final_output = pd.merge(output, course_data, how='left', left_on=["subject_course_section_occurrence"],
         #                         right_on=["subject_course_section_occurrence"])
+        print(output.shape)
         final_output = pd.merge(course_data, output, how='left', left_on=["subject_course_section_occurrence"],
                                 right_on=["subject_course_section_occurrence"])
+        print(final_output.shape)
         final_output = pd.merge(final_output, room_data, how="left", left_on="bldg_room", right_on="bldg_room")
         # final_output = pd.merge(final_output,room_data, how = "left", left_on ="Bldg_room",right_on = "bldg_room")
+        print(final_output.shape)
         final_output = self.get_additional_output_columns(final_output)
+        print(final_output.shape)
         final_output.rename(columns={"use": 'Room Use'}, inplace=True)
         columns_to_keep = self.informative_output_columns + ["enrollment", "capacity", "days", "begin_time", "end_time",
                                      "exclusively_online", "Room Use", "crn", "contact_hours"]
         final_output = final_output[columns_to_keep]
-
+        print(final_output.shape)
         # final_output.columns = ["Subject Code", "Course Number", "Course Section", "bldg_room", "Enrollment",
         #                         "capacity", "Days", "Begin Time", "End Time", "Eclusively Online", "Room Use", "crn", "Conatct Hours"]
 

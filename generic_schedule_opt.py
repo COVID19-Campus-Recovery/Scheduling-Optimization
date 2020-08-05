@@ -5,7 +5,6 @@ from abc import abstractmethod
 import data_process as dp
 import set_process as sp
 
-
 class GenericScheduleOpt(ABC):
     """
     Authors:

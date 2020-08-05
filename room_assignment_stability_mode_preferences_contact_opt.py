@@ -4,9 +4,9 @@ from gurobipy import *
 
 import data_process as dp
 import set_process as sp
-from room_assignment_mode_preferences_contact_opt import RoomAssignmentModePreferencesContactyOpt
+from room_assignment_mode_preferences_contact_opt import RoomAssignmentModePreferencesContactOpt
 
-class RoomAssignmentStabilityModePreferencesContactyOpt(RoomAssignmentModePreferencesContactyOpt):
+class RoomAssignmentStabilityModePreferencesContactOpt(RoomAssignmentModePreferencesContactOpt):
     
     # model_description = "stability_mode_preferences_contact_max"
     informative_output_columns = ["subject_code", "course_number", "course_section", "bldg_room", "delivery_mode", "in_person_hours", "preference"]
@@ -58,7 +58,7 @@ class RoomAssignmentStabilityModePreferencesContactyOpt(RoomAssignmentModePrefer
     def read_filenames(cls, system_arguements):
 
         if len(system_arguements) < 7:
-            raise Exception("""RoomAssignmentStabilityModePreferencesContactyOpt model requires all of the following commandline arguments: 
+            raise Exception("""RoomAssignmentStabilityModePreferencesContactOpt model requires all of the following commandline arguments: 
                             course_data_filename, room_data_filename, building_location_filepath, output_file_directory, minimum_section_contact_days, weeks_in_semester""")
 
 
@@ -71,7 +71,7 @@ class RoomAssignmentStabilityModePreferencesContactyOpt(RoomAssignmentModePrefer
 
 if __name__ == "__main__":
 
-    course_data_filepath, room_data_filepath, building_location_filepath, output_data_filepath, minimum_section_contact_days, weeks_in_semester = RoomAssignmentStabilityModePreferencesContactyOpt.read_filenames(sys.argv)
+    course_data_filepath, room_data_filepath, building_location_filepath, output_data_filepath, minimum_section_contact_days, weeks_in_semester = RoomAssignmentStabilityModePreferencesContactOpt.read_filenames(sys.argv)
     course_data = dp.clean_course_data(course_data_filepath)
     room_data = dp.clean_room_data(room_data_filepath)
     building_location_data = dp.clean_building_location_data(building_location_filepath, course_data)
@@ -80,13 +80,13 @@ if __name__ == "__main__":
         {"preference": 0.01, "contact_hours": 0.01},
         {"preference": 0.01, "contact_hours": 0.1},
         {"preference": 0.01, "contact_hours": 0.15},
-        {"preference": 0.02, "contact_hours": 0.01},
-        {"preference": 0.02, "contact_hours": 0.1},
-        {"preference": 0.02, "contact_hours": 0.15},
+        # {"preference": 0.02, "contact_hours": 0.01},
+        # {"preference": 0.02, "contact_hours": 0.1},
+        # {"preference": 0.02, "contact_hours": 0.15},
     ]
     for objective_relax_tollerance in objective_relax_tollerance_list:
 
-        assign_opt = RoomAssignmentStabilityModePreferencesContactyOpt(course_data,
+        assign_opt = RoomAssignmentStabilityModePreferencesContactOpt(course_data,
                                                                       room_data,
                                                                       building_location_data,
                                                                       minimum_section_contact_days,
@@ -105,3 +105,25 @@ if __name__ == "__main__":
                                 model=model,
                                 output_path=modified_output_filepath,
                                 )
+
+    # assign_opt = RoomAssignmentStabilityModePreferencesContactOpt(course_data,
+    #                                                                 room_data,
+    #                                                                 building_location_data,
+    #                                                                 minimum_section_contact_days,
+    #                                                                 weeks_in_semester,
+    #                                                                 preference_objective_tollerance=0.01,
+    #                                                                 contact_hours_objective_tollerance=1)
+    # model = assign_opt.construct_model()
+    # model.update()
+    # model.printStats()
+
+    # #solve model
+    # model.optimize()
+    # modified_output_filepath = output_data_filepath.split("stability_mode_preferences_contact_max")[0] + "stability_mode_preferences_" + str(0.01) + "_max.csv"
+    # assign_opt.output_result(course_data=course_data,
+    #                         room_data=room_data,
+    #                         model=model,
+    #                         output_path=modified_output_filepath,
+    #                         )
+
+

@@ -741,7 +741,7 @@ def get_contact_hours_helper(capacity,
         else:
             return meeting_hours * (weekly_meeting_days - 1), "residential_spread"
     elif enrollment <= weekly_meeting_days * capacity:
-        for limited_weekly_meeting_days in [2, weekly_meeting_days + 1]:
+        for limited_weekly_meeting_days in range(2, weekly_meeting_days + 1):
             if enrollment <= limited_weekly_meeting_days * capacity:
                 contact_days_per_week = weekly_meeting_days - limited_weekly_meeting_days + 1
                 contact_hours = meeting_hours * contact_days_per_week
@@ -963,10 +963,14 @@ def get_output_room_section_dict(output_data):
     return output_room_section_map
 
 def get_dist_between_buildings(building_location_data,
-                              all_building):
+                              all_building,
+                              square_distance=True):
     """
     Input:
         building_location_data - pd.DataFrame: properly formatted building location dataframe
+        all_building - set{str}: set of all buildings
+        square_distance - bool: If True, the square of distances between buildings is used instead of the actual distance
+                                This may be ideal if one wishes to penalize large values more healvily
     Output:
         dist_between_building_dict - dict{(str, str): float}: maps each pairs of buildings, to the distance between these buildings in meters
     """
@@ -984,7 +988,10 @@ def get_dist_between_buildings(building_location_data,
         distance = haversine((lat_building_dict[building_1], lng_building_dict[building_1]),
                                  (lat_building_dict[building_2], lng_building_dict[building_2]),
                                  unit='m')
-        dist_between_building_dict[building_1, building_2] = distance
+        if square_distance:
+            dist_between_building_dict[building_1, building_2] = distance ** 2
+        else:
+            dist_between_building_dict[building_1, building_2] = distance
     
     avg_building_dist = sum(dist_between_building_dict.values())/len(dist_between_building_dict.values())
     

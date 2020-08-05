@@ -14,7 +14,7 @@ class ScheduleOpt(GenericScheduleOpt):
         return
 
     def get_all_sets_params(self):
-        self.C = self.course_data['course_subject_number'].unique().tolist()
+        self.C = self.course_data['course_subject_section'].unique().tolist()
         self.X = self.course_data['subject_number_section_orrurance'].tolist()
         self.R = self.room_data['bldg_room'].tolist()
         self.T = self.course_data['full_time'].unique()

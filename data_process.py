@@ -129,11 +129,6 @@ def mark_occurances(course_data):
     course_data['four_times_repeated_section'] = (course_data['three_times_repeated_section'] & course_data['three_times_repeated_section'].eq(course_data['three_times_repeated_section'].shift()))
     course_data['five_times_repeated_section'] = (course_data['four_times_repeated_section'] & course_data['four_times_repeated_section'].eq(course_data['four_times_repeated_section'].shift()))
 
-    # print(course_data[course_data['three_times_repeated_section']])
-    # print(course_data[course_data['three_times_repeated_section']]['subject_course_section'])
-
-    # print(course_data[course_data['four_times_repeated_section']])
-    # print(course_data[course_data['four_times_repeated_section']]['subject_course_section'])
     course_data["occurance"] = course_data.apply(
         lambda row: 0 if not row["repeated_section"]
         else (1 if not row["twice_repeated_section"]
@@ -285,7 +280,6 @@ def pad_str_prefix(str_object, desired_length, pad_value):
         raise Exception("str_object and pad_value must be of type string when calling pad_str_prefix")
 
     if len(str_object) > desired_length:
-        print(str_object)
         raise Exception("pad_str_prefix can only be called when len(str_object) <= expected_length")
     elif len(str_object) == desired_length:
         return str_object

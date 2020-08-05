@@ -3,7 +3,7 @@ import csv
 import matplotlib.pyplot as plt
 import data_process as dp
 import set_process as sp
-
+import numpy as np
 
 def plot_room_assignment_changes(output_filepath, course_filepath):
 
@@ -28,11 +28,11 @@ def plot_room_assignment_changes(output_filepath, course_filepath):
 			count_room_asignmment_change_dict["remote"] += 1
 		elif output_room_section_map[section] == original_room:
 			count_room_asignmment_change_dict["same_room"] += 1
-		elif output_room_section_map[section].split("_")[1] == original_room.split("_")[1]:
+		elif output_room_section_map[section].split("_")[0] == original_room.split("_")[0]:
 			count_room_asignmment_change_dict["same_building"] += 1
 		else:
 			count_room_asignmment_change_dict["different_building"] += 1
-
+	print(count_room_asignmment_change_dict)
 	plt.bar(count_room_asignmment_change_dict.keys(), count_room_asignmment_change_dict.values())
 	plt.ylabel('number sections', fontsize=16)
 	plt.xticks(fontsize=10)
