@@ -1,42 +1,29 @@
-# Scheduling Optmization 
+# CCMAP
 
 -----
+## Purpose
 
-Jun-1
+This codebase was initially developed during the start of the Covid-19 pandemic at the Georgia Institue of Technology. At this time, university campuses began considering the need for physical (or ‘social’) distancing. While physical distancing is an important public health intervention
+during airborne pandemics, physical distancing dramatically reduces the effective capacity of classrooms. This presented a unique problem to campus planners who hoped to deliver a meaningful amount of in-person instruction in a way that respected physical distancing. This process involved 1) assigning a mode to each offered class as either remote, residential (in-person) or hybrid, and 2) reassigning classrooms under severely reduced capacities to the non-remote classes. These decisions need to be made quickly and under several constraints and competing priorities such as restrictions on changes to the timetable of classes, trade-offs between classroom density and educational benefits of in-person vs. online instruction, and administrative preferences for course modes and classrooms reassignments.
+
+Specifically, this package implemented an hierarchnical integer program to handle the multiple criteria according to priorities. The criteria considereed are: maximizing satisfaction of mode preferences, maximizing in-person contact hours, and minimizing classroom reallocation.
+
+For more details regarding the mathematical model, please reference [Multi-criteria Course Mode Selection and Classroom Assignment Under Sudden Space Scarcity](http://www.optimization-online.org/DB_FILE/2021/08/8527.pdf)
+
+This package may be particularly valuable in the event that the Covid-19 pandemics, or future pandemics, pick up suddenly and again result in the need for physical distancing, and thereby create a condition of sudden space scarcity for universities.
+
 -----
+## Installation
 
-### data\_process.py
 
-**A new function added:** def clean\_detail\_room\_data(filepath, buildings).
+-----
+## How to Use
 
-This is the data cleaning of new room raw data with deta​​il capacity information. The output format should be same as the above function. I kept the previous one, so you can choose use which one in your formulation.
 
-### set\_process.py
 
-**1\. set `T_x` changed:** since the timeslots are fixed, the timeslot of the section should be same as 2019.
+-----
+## Credits
 
-```python
-  T_x = dict()
-    for x in X:
-        T_x[x] = course_data[course_data["subject_number_section_orrurance"] == x]["full_time"].tolist()
-```
+We express great appreciation for the faculty sponsors of this project: Dr. Lauren N. Steimle, Dr. Dima Nazzal, Dr. Natashia Boland
 
-**2\. New sets added:**
-
-`n_rf`: capacity of room r under safe distance f
-
-`S_x`: the set of students choosing section x.
-
-`p_x`: class size of section x.
-
-`X_wo_room`: a set of sections that have no room assignment in 2019 fall
-
-`X_wo_time`: a set of sections that have no time assignment in 2019 fall
-
-`F:` Safe distance level `[0, 6, 8, 12]`
-
-`k_f:` risk factors when not achieve f safe distance. `{0:10000,6:20,8:10,12:5}`
-
-### assignment\_opt.py
-
-Room assignment optimization model.
+Developers of the codebase include: Mehran Navabi-Shirazi, Dr. Mohamed El Tonbari, Kaiwen Luo, Dr. Faramroze Engineer
