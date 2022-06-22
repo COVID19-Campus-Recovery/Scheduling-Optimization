@@ -8,7 +8,7 @@ during airborne pandemics, physical distancing dramatically reduces the effectiv
 
 Specifically, this package implements an hierarchnical integer program to handle the multiple criteria according to priorities. The criteria considereed are: maximizing satisfaction of mode preferences, maximizing in-person contact hours, and minimizing classroom reallocation.
 
-For more details regarding the mathematical model, please reference [Multi-criteria Course Mode Selection and Classroom Assignment Under Sudden Space Scarcity](http://www.optimization-online.org/DB_FILE/2021/08/8527.pdf)
+For more details regarding the mathematical model, please reference Navabi-Shirazi, Mehran, Mohamed El Tonbari, Natashia Boland, Dima Nazzal, and Lauren N. Steimle. ``[Multi-criteria Course Mode Selection and Classroom Assignment Under Sudden Space Scarcity](http://www.optimization-online.org/DB_FILE/2021/08/8527.pdf)" _Manufacturing & Service Operations Management_ (Forthcoming)
 
 This package may be particularly valuable in the event that the Covid-19 pandemics, or future airborn pandemics, again increase the need for physical distancing, and thereby result in sudden space scarcity for universities.
 
