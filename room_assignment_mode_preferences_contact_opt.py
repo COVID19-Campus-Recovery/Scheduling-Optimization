@@ -21,8 +21,8 @@ class RoomAssignmentModePreferencesContactOpt(RoomAssignmentContactyOpt):
         super().get_all_sets_params()
 
         self.preferred_delivery_mode_section_dict = sp.get_preferred_delivery_mode(self.course_data,
-                                                                                      self.all_section
-                                                                                      )
+                                                                                  self.all_section
+                                                                                  )
 
         self.total_contact_hours_section_room_dict, self.delivery_mode_section_room_dict = sp.get_contact_hours(all_section=self.all_section,
                                                                                                                 all_room=self.all_room,

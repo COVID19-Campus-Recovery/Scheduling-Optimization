@@ -8,7 +8,6 @@ from room_assignment_stability_mode_preferences_contact_opt import RoomAssignmen
 
 class RoomAssignmentStabilityModePreferencesContactOptNondominated(RoomAssignmentStabilityModePreferencesContactOpt):
     
-    # model_description = "stability_mode_preferences_contact_max"
     informative_output_columns = ["subject_code", "course_number", "course_section", "bldg_room", "delivery_mode", "in_person_hours", "preference", "raw_preference"]
     model_description = "nondominated_stability_mode_preferences_contact_max"
 

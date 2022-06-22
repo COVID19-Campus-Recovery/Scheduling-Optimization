@@ -55,12 +55,10 @@ class RoomAssignmentContactyOpt(RoomAssignmentOpt):
         print("setting model constraints")
         X_xr = model_vars["X_xr"]
 
-        print("constraint: each section assigned to room")
-        C_1 = model.addConstrs((quicksum(X_xr[(section,room)] for room in self.room_section_dictionary[section]) <= 1
+        model.addConstrs((quicksum(X_xr[(section,room)] for room in self.room_section_dictionary[section]) <= 1
                                  for section in self.all_section),"")
 
-        print("constraint: at most one section in room at a given time")
-        C_2 = model.addConstrs((quicksum(X_xr[(section, room)] for section in set(self.all_section).intersection(set(self.section_room_dictionary[room])).intersection(set(self.section_timeslot_clash_dictionary[day_starttime]))) <= 1
+        model.addConstrs((quicksum(X_xr[(section, room)] for section in set(self.all_section).intersection(set(self.section_room_dictionary[room])).intersection(set(self.section_timeslot_clash_dictionary[day_starttime]))) <= 1
                                 for room in self.all_room for day_starttime in self.all_simple_timeslot), "")
 
         return
@@ -105,10 +103,7 @@ class RoomAssignmentContactyOpt(RoomAssignmentOpt):
         return course_data_filepath, room_data_filepath, output_data_filepath, minimum_section_contact_days, weeks_in_semester
 
 
-
-
 if __name__ == "__main__":
-
 
     course_data_filepath, room_data_filepath, output_data_filepath, minimum_section_contact_days, weeks_in_semester = RoomAssignmentContactyOpt.read_filenames(sys.argv)
 

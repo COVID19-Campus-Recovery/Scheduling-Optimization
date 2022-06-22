@@ -23,8 +23,8 @@ class RoomAssignmentModePreferencesResidentialEnforced(RoomAssignmentModePrefere
         X_xr = model_vars["X_xr"]
         X_xr = model_vars["X_xr"]
         residential_spread_preferences_lin_expr = quicksum(X_xr[(section, room)] for section in self.all_section for room in self.preferred_room_section_dictionary[section] if self.preferred_delivery_mode_section_dict[section] == {"residential_spread"})
-        C_residential_bound = model.addConstr(residential_spread_preferences_lin_expr >= self.residential_spread_preference_bound, "")
-
+        model.addConstr(residential_spread_preferences_lin_expr >= self.residential_spread_preference_bound, "")
+        return
 
     def set_objective(self, model, model_vars):
         model.ModelSense = GRB.MAXIMIZE
