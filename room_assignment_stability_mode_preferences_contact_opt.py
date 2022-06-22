@@ -23,14 +23,10 @@ class RoomAssignmentStabilityModePreferencesContactOpt(RoomAssignmentModePrefere
         super().get_all_sets_params()
 
         self.existing_room_assignment_section_dict = sp.get_existing_room_assignment_section_dict(self.course_data)
-
         self.room_building_dict, self.building_room_dict = sp.get_room_building_sets(self.all_room, self.course_data)
         self.all_building = set(self.room_building_dict.keys())
-
-        #need some check to ensure the data in all_building is consistent with buildings in building_location_data
         self.dist_between_building_dict = sp.get_dist_between_buildings(self.building_location_data,
                                                                         self.all_building)
-
         self.reassginment_cost_section_room_dict = sp.get_reassignment_cost(self.all_section,
                                                                             self.all_room,
                                                                             self.dist_between_building_dict,
@@ -75,55 +71,24 @@ if __name__ == "__main__":
     course_data = dp.clean_course_data(course_data_filepath)
     room_data = dp.clean_room_data(room_data_filepath)
     building_location_data = dp.clean_building_location_data(building_location_filepath, course_data)
-    #generate model
-    objective_relax_tollerance_list = [
-        {"preference": 0.01, "contact_hours": 0.01},
-        {"preference": 0.01, "contact_hours": 0.1},
-        {"preference": 0.01, "contact_hours": 0.15},
-        # {"preference": 0.02, "contact_hours": 0.01},
-        # {"preference": 0.02, "contact_hours": 0.1},
-        # {"preference": 0.02, "contact_hours": 0.15},
-    ]
-    for objective_relax_tollerance in objective_relax_tollerance_list:
+    assign_opt = RoomAssignmentStabilityModePreferencesContactOpt(course_data,
+                                                                    room_data,
+                                                                    building_location_data,
+                                                                    minimum_section_contact_days,
+                                                                    weeks_in_semester,
+                                                                    preference_objective_tollerance=0.01,
+                                                                    contact_hours_objective_tollerance=1)
+    model = assign_opt.construct_model()
+    model.update()
+    model.printStats()
 
-        assign_opt = RoomAssignmentStabilityModePreferencesContactOpt(course_data,
-                                                                      room_data,
-                                                                      building_location_data,
-                                                                      minimum_section_contact_days,
-                                                                      weeks_in_semester,
-                                                                      preference_objective_tollerance=objective_relax_tollerance["preference"],
-                                                                      contact_hours_objective_tollerance=objective_relax_tollerance["contact_hours"])
-        model = assign_opt.construct_model()
-        model.update()
-        model.printStats()
-
-        #solve model
-        model.optimize()
-        modified_output_filepath = output_data_filepath.split("stability_mode_preferences_contact_max")[0] + "stability_mode_preferences_" + str(objective_relax_tollerance["preference"]) + "_contact_" + str(objective_relax_tollerance["contact_hours"]) + "_max.csv"
-        assign_opt.output_result(course_data=course_data,
-                                room_data=room_data,
-                                model=model,
-                                output_path=modified_output_filepath,
-                                )
-
-    # assign_opt = RoomAssignmentStabilityModePreferencesContactOpt(course_data,
-    #                                                                 room_data,
-    #                                                                 building_location_data,
-    #                                                                 minimum_section_contact_days,
-    #                                                                 weeks_in_semester,
-    #                                                                 preference_objective_tollerance=0.01,
-    #                                                                 contact_hours_objective_tollerance=1)
-    # model = assign_opt.construct_model()
-    # model.update()
-    # model.printStats()
-
-    # #solve model
-    # model.optimize()
-    # modified_output_filepath = output_data_filepath.split("stability_mode_preferences_contact_max")[0] + "stability_mode_preferences_" + str(0.01) + "_max.csv"
-    # assign_opt.output_result(course_data=course_data,
-    #                         room_data=room_data,
-    #                         model=model,
-    #                         output_path=modified_output_filepath,
-    #                         )
+    #solve model
+    model.optimize()
+    modified_output_filepath = output_data_filepath.split("stability_mode_preferences_contact_max")[0] + "stability_mode_preferences_" + str(0.01) + "_max.csv"
+    assign_opt.output_result(course_data=course_data,
+                            room_data=room_data,
+                            model=model,
+                            output_path=modified_output_filepath,
+                            )
 
 

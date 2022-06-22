@@ -3,31 +3,11 @@ import numpy as np
 import pandas as pd
 from haversine import haversine
 
-all_day = ("M", "T", "W", "R", "F")
-
-F = [0, 6, 8, 12]
-
-k_f = {0:10000,6:20,8:10,12:5}
-
-course_columns = [
-    'Course 1 Subject Code_Course#_Section_CRN_Credits',
-    'Course 2 Subject Code_Course#_Section_CRN_Credits',
-    'Course 3 Subject Code_Course#_Section_CRN_Credits',
-    'Course 4 Subject Code_Course#_Section_CRN_Credits',
-    'Course 5 Subject Code_Course#_Section_CRN_Credits',
-    'Course 6 Subject Code_Course#_Section_CRN_Credits',
-    'Course 7 Subject Code_Course#_Section_CRN_Credits',
-    'Course 8 Subject Code_Course#_Section_CRN_Credits',
-    'Course 9 Subject Code_Course#_Section_CRN_Credits',
-    'Course 10 Subject Code_Course#_Section_CRN_Credits',
-    'Course 11 Subject Code_Course#_Section_CRN_Credits',
-    'Course 12 Subject Code_Course#_Section_CRN_Credits'
-]
 
 all_permissible_delivery_mode = {"residential_spread",
-                                         "hybrid_split",
-                                         "hybrid_touchpoint",
-                                         "remote"}
+                                "hybrid_split",
+                                "hybrid_touchpoint",
+                                "remote"}
 
 
 def get_section_set(course_data, all_course):
@@ -44,35 +24,6 @@ def get_section_set(course_data, all_course):
         section_course_dict[course_current] = course_data[course_data['subject_course_section'] == course_current][
             'subject_course_section_occurrence'].tolist()
     return section_course_dict
-
-
-def get_student_sets(student_data, all_section):
-    """ 
-    Depricated (at least temporarily)
-    A revised version of this method, considering the proper input data format
-    may be created if we decide to incorporate individual students into the model
-    """
-    student_data.fillna("-", inplace=True)
-    section_student_dict = dict()
-    for row in student_data.iterrows():
-        s_courses = []
-        for c in course_columns:
-            if "ISYE" in row[1][c]:
-                templist = row[1][c].split()
-                course_section = '_'.join(templist[:3])
-                for i in range(3):
-                    standard_form = course_section + "_" + str(i)
-                    if standard_form in all_section:
-                        s_courses.append(standard_form)
-        section_student_dict[row[1]["SYSGENID"]] = s_courses
-    # set of courses that student is enrolled in
-    course_student_dict = dict()
-    for s, x in section_student_dict.items():
-        cou = set()
-        for i in x:
-            cou.add(i[:9])
-        course_student_dict[s] = list(cou)
-    return section_student_dict, course_student_dict
 
 
 def get_timeslot_sets(course_data, all_section, all_timeslot):
@@ -131,6 +82,7 @@ def get_room_sets_capacity_restricted(course_data, room_data, all_room, all_sect
     Other methods, such as get_rooms_set_trivial, can alternatively be used to generate room_section_dictionary and section_room_dictionary
         if this restriction is not desired
     """
+
     room_section_dictionary = dict()
     section_room_dictionary = dict()
     for room in all_room:
@@ -172,7 +124,6 @@ def get_room_sets(course_data, room_data, all_room, all_section):
         to the given row in course_data
 
 
-
     The implmentation bellow is naive and may be improved for runtime
     """
 
@@ -199,6 +150,7 @@ def get_room_sets(course_data, room_data, all_room, all_section):
         bldgroom_section_dictionary[section] = bldgroom_current_section #let the value of bldgroom_section_dictionary point to this set
 
     return bldgroom_section_dictionary, section_bldgroom_dictionary
+
 
 def remove_remote_rooms_availability(bldgroom_section_dictionary,
                                     section_bldgroom_dictionary,
@@ -256,8 +208,6 @@ def get_preferred_room_sets(course_data,
     It is therefore necessary to be able to map sections to rooms (and vice versa) that can be used to teach the section in their preferred mode.
     Note that the keys of room_section_dictionary will be idential to that of preferred_room_section_dictionary.
     Moreover, for a given key, the corresponding value in preferred_room_section_dictionary will be a subset of the corresponding value in room_section_dictionary
-    
-    TODO: is there a more effective way to design the the datastructures to make these maniuplations simpler?
     """
 
     preferred_room_section_dictionary = dict()
@@ -308,115 +258,6 @@ def get_room_sets_trivial(course_data, room_data, all_room, all_section):
         room_section_dictionary[section] = all_room
     return room_section_dictionary, section_room_dictionary
 
-
-def get_capacity_sets(room_data):
-    """
-    Depricated
-    """
-    n_rf = dict()
-    for f in F:
-        if f == 0:
-            temp = dict(zip(room_data["bldg_room"], room_data["Station Count (Current)"]))
-        else:
-            colname = "%d' Module Capacity at %dsf" % (f, f ** 2)
-            temp = dict(zip(room_data["bldg_room"], room_data[colname]))
-
-        for k, v in temp.items():
-            n_rf[(k, f)] = int(v)
-
-    return n_rf
-
-
-def get_size_set(section_student_dict):
-    """
-    Depricated
-    """
-    S_x = {}
-    p_x = {}
-    for s, x in section_student_dict.items():
-        for i in x:
-            if i not in S_x.keys():
-                S_x[i] = [s]
-            else:
-                S_x[i].append(s)
-
-    for k, v in S_x.items():
-        p_x[k] = len(v)
-
-    return S_x, p_x
-
-
-def get_noroom_section_sets(course_data, Size_x):
-    """
-    Depricated
-    """
-    # X_wo_room: a set of sections that have no room assignment in 2019 fall
-    X_wo_room = set()
-
-    for x, n in Size_x.items():
-        room = course_data[course_data['subject_course_section_occurrence'] == x]['bldg_room'].iloc[0]
-        if str(room) == "nan":
-            X_wo_room.add(x)
-    return X_wo_room
-
-
-def get_section_w_time(T_x):
-    """
-    Depricated
-    """
-    #X_w_time: a set of sections that have no time assignment in 2019 fall
-    X_w_time = list(dict(filter(lambda ele: np.NaN not in ele[1], T_x.items())).keys())
-    return X_w_time
-
-
-def generate_simple_time_intervals(min_hour=6,max_hour=20,interval_length=0.25):
-    """
-    Depricated
-    """
-    all_dow = ['M', 'T', 'W', 'R', 'F']
-
-    minute_values = [int(60*interval_length*i) for i in range(int(1/interval_length))]
-    all_times_of_day = list()
-    for hour in range(min_hour, max_hour):
-        all_times_of_day.append(str(hour)+"00")
-        for minute_value in minute_values[1:]:
-            all_times_of_day.append(str(hour)+str(minute_value))
-        
-    all_times_of_day.append(str(max_hour) +"00")
-
-    all_time_intervals=list()
-    for dow in all_dow:
-        for i in range(len(all_times_of_day)-1):
-            all_time_intervals.append(dow + "_" + all_times_of_day[i] + "_" + all_times_of_day[i+1])
-
-    return(all_time_intervals)
-
-
-def get_sections_with_overlapping_time_slot_depricated(all_timeslot, all_section, course_data, timeinterval):
-    """ 
-    Depricated
-    """
-
-    X_t_clash = dict()
-    X_timeslot = dict()
-
-    for section in all_section:
-        timeslot_current_section = course_data[course_data['subject_course_section_occurrence'] == section]["full_time"].iloc[0]
-        if timeslot_current_section in X_timeslot:
-            X_timeslot[t_current_section].add(section)
-        else:
-            X_timeslot[t_current_section] = {section}
-
-    section_student_dictimpletime = dict()
-    for simpletime in timeinterval:
-        timeslots_conflicting = get_overlapping_time_slots(all_timeslot, simpletime)
-        sections_conflicting = set()
-        for timeslot in timeslots_conflicting:
-            if timeslot in X_timeslot:
-                sections_conflicting = sections_conflicting.union(X_timeslot[timeslot])
-        section_student_dictimpletime[simpletime] = sections_conflicting
-
-    return section_student_dictimpletime
 
 def get_all_simplieid_timeslot(all_timeslot):
     """
@@ -499,8 +340,6 @@ def get_overlapping_time_slots(all_timeslot, current_timeslot):
             However timeslot_clash could not include 'F_905_955' or 'TR_1200_1445'
 
     This method is intended as a helper method to get_sections_with_overlapping_time_slot()
-
-    TODO: enforce 15 minute time gap between sections
     """
 
     current_dow, current_start_time, current_end_time = current_timeslot.split("_")
@@ -642,6 +481,7 @@ def get_timeslot_duration(timeslot):
             if timeslot = "F_1300_1445", then duration_hours = 1.75
     Intended as a helper function to get_meeting_hours
     """
+
     dow, start_time, end_time = timeslot.split("_")
     start_time = pad_time_str(start_time)
     end_time = pad_time_str(end_time)
@@ -660,7 +500,7 @@ def get_meeting_hours(timeslot_section_dictionary):
     Output:
         meeting_hours_section_dictionary - dict{str: str}: maps a section to the number of hours it meets, on any day it meetings
     """
-    #this is not correct:
+
     meeting_hours_section_dictionary = {section: get_timeslot_duration(timeslot) for section, timeslot in timeslot_section_dictionary.items()}
     return meeting_hours_section_dictionary
 
@@ -688,7 +528,6 @@ def get_contact_hours(all_section,
     Output:
         total_contact_hours_section_room_dict - dict{str: str}: maps a section and room to the contact hours the section would have, if it were assigned to the given room
         delivery_mode_section_room_dict - dict{str: str}: maps a section and room to the delivery mode that the section must take, it's to be taught in that room
-        
     """
 
     total_contact_hours_section_room_dict = dict()
@@ -775,10 +614,8 @@ def get_contact_hours_no_mixing_helper(capacity,
     It is an alternative function that may be called instead of get_contact_hours_helper. The difference is in the contact_hours calculation for the hyrid_split mode.
     Specifically, this method involves distinct cohorts of students so that students in each cohort never meet students from the other cohorts when attending their class for the section
     All input paramters are specific to a given room and section.
-
-    TODO: calculation of delivery_mode and contact_hours should be separate methods
-    TODO: thoughtful approach to calculating contact_hours when enrollment = 0. But actually this does not matter since contact hours is multiplied by enrollment in the objective function anyway
     """
+
     if enrollment <= capacity:
         delivery_mode = "residential_spread"
     elif capacity < enrollment and enrollment <= weekly_meeting_days * capacity:
@@ -872,6 +709,7 @@ def get_room_building_sets(all_room, course_data=None):
         "172_102, 172_224, 172_300, 172_101", then room_building_dict may contain the the key value paid:
         "172": {"172_102, 172_224, 172_300, 172_101"}
     """
+
     all_room = set(all_room)
     if course_data is not None:
         rooms_from_course_data = set(str(row["building_number"]) + "_" + str(row["room"]) for index, row in course_data.iterrows())
@@ -942,6 +780,7 @@ def get_existing_room_assignment_section_dict(course_data):
     Output:
         existing_room_assignment_section_dict - dict{str: str}: maps each section to its existing room assignment
     """
+
     if "building_number" not in course_data.columns or "room" not in course_data.columns:
         raise Exception("course_data must include columns 'building_number' and 'room' in order to call get_existing_room_assignment_section_dict")
 
@@ -1017,10 +856,7 @@ def get_reassignment_cost(all_section,
     Output:
         reassginment_cost_section_room_dict - dict{(str, str): float} - maps a (section, room) pair to the cost of reassigning the section to that room
     """
-    # dist_between_diff_building_dict = {building_pair: distance for building_pair, distance in dist_between_building_dict.items() if distance != 0}
-    # same_building_penalty = delta * min(dist_between_diff_building_dict.values())
-    # print("same_building_penalty")
-    # print(same_building_penalty)
+
     reassginment_cost_section_room_dict = dict()
     for section in all_section:
         if section in existing_room_assignment_section_dict:

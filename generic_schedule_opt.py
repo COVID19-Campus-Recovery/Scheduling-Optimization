@@ -7,9 +7,6 @@ import set_process as sp
 
 class GenericScheduleOpt(ABC):
     """
-    Authors:
-        Mehran Navabi
-
     All schedule optimization classes should be a descendant of this abstract class,
     as it provides a framework for methods that should be implemented.
     This class makes no assumptions regarding the algorithm used
