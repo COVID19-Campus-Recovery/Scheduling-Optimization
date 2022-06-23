@@ -30,3 +30,6 @@ This package may be particularly valuable in the event that the Covid-19 pandemi
 We express great thanks to the project's incredible faculty advisors and collaborators: Dr. Lauren N. Steimle, Dr. Dima Nazzal, Dr. Natashia Boland
 
 We also thank all project developers: Mehran Navabi-Shirazi, Dr. Mohamed El Tonbari, Kaiwen Luo, Dr. Faramroze Engineer
+
+This work was supported by a grant from the Thos and Clair Muller Research Endowment Fund of the Georgia Institute of Technology’s H. Milton Stewart School of Industrial and Systems Engineering, and a grant from the Georgia Institute of Technology Executive Vice President for Research COVID-19 Rapid Response Seed Grant Program. 
+
