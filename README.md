@@ -19,9 +19,22 @@ This package may be particularly valuable in the event that the Covid-19 pandemi
 -----
 ## Installation
 
+Gurobi 9.1.0 and the gurobipy package are required and can be downloaded from Gurobi's website.
+
+Additional python requirements can be installed via:
+
+```pip3 install -r requirements.txt```
 
 -----
 ## How to Use
+
+The optimization model can be run by using the following command:
+
+```python3 room_assignment_stability_mode_preferences_contact_opt.py <course section file name> <classroom file name> <building coordinates file name> <folder to store output file> <mininum number of touch poitns (int)> <number of weeks in the semester (int)>```
+
+The three input files (course, classroom, building coordinates) may be csv or excel.
+
+Please refer to the input files in the example directory for reference on how to structure the input files.
 
 
 -----
