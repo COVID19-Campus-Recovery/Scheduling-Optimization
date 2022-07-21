@@ -32,6 +32,8 @@ The optimization model can be run by using the following command:
 
 ```python3 room_assignment_stability_mode_preferences_contact_opt.py <course section file name> <classroom file name> <building coordinates file name> <folder to store output file> <mininum number of touch poitns (int)> <number of weeks in the semester (int)>```
 
+The file room_assignment_stability_mode_preferences_contact_opt.py can be swapped for other files, depending on the objective function the user wishes to optimize.
+
 The three input files (course, classroom, building coordinates) may be csv or excel.
 
 Please refer to the input files in the example directory for reference on how to structure the input files.
