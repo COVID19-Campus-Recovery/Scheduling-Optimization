@@ -1,0 +1,258 @@
+OBJECTID,BLDG_NUM,building_number,BLDG_TYPE,BLDG_NAME,ShowFeatur,latitude,longitude
+1,323,323,Greek Housing,Sigma Alpha Epsilon,Yes,-84.39452228,33.77611037
+2,316,316,Greek Housing,Phi Kappa Sigma,Yes,-84.3916979,33.77612913
+3,317,317,Greek Housing,Phi Kappa Tau,Yes,-84.39300239,33.77604542
+4,308,308,Greek Housing,Delta Tau Delta,Yes,-84.39479754,33.77599614
+5,312,312,Greek Housing,Lambda Chi Alpha,Yes,-84.3923712,33.776256
+6,302,302,Greek Housing,Alpha Tau Omega,Yes,-84.39410697,33.77626166
+7,332,332,Religious Org,Campus Christian Fellowship,Yes,-84.39161783,33.77561342
+8,300,300,Greek Housing,Alpha Epsilon Pi,Yes,-84.39248113,33.77406699
+9,328,328,Greek Housing,Theta Chi,Yes,-84.39235028,33.77761991
+10,341,341,Religious Org,Catholic Center,Yes,-84.39298649,33.77552507
+11,303,303,Greek Housing,Beta Theta Pi,Yes,-84.3944582,33.77550678
+12,307,307,Greek Housing,Delta Sigma Phi,Yes,-84.3926057,33.77583778
+13,311,311,Greek Housing,Kappa Sigma,Yes,-84.39319852,33.77792332
+14,330,330,Greek Housing,Zeta Beta Tau,Yes,-84.39247064,33.77787811
+15,329,329,Greek Housing,Theta Xi,Yes,-84.39152858,33.77586849
+16,324,324,Greek Housing,Sigma Chi,Yes,-84.39232499,33.77569469
+17,337,337,Greek Housing,Delta Sigma Theta,Yes,-84.39272105,33.77535854
+18,314,314,Greek Housing,Phi Delta Theta,Yes,-84.39416016,33.77461554
+19,334,334,Greek Housing,Alpha Delta Pi,Yes,-84.3928147,33.77450076
+20,346,346,Religious Org,Presbyterian Center,Yes,-84.39232909,33.77445476
+21,304,304,Greek Housing,Phi Kappa Psi,Yes,-84.39412099,33.77439374
+22,177J,177J,Admin/Services,Whitehead  Pharmacy,Yes,-84.4031579,33.77473698
+23,75,75,Academic/Research,Architecture West,Yes,-84.39607602,33.77608105
+24,95,95,Academic/Research,Pettit Building,Yes,-84.3973434,33.7766169
+25,344,344,Religious Org,Methodist Center / Wesley Foundation,Yes,-84.39332503,33.77609943
+26,47,47,Admin/Services,Wardlaw Center,Yes,-84.39281384,33.77169941
+30,170,170,Academic/Research,Global Learning & Conference Center,Yes,-84.38993451,33.77633202
+31,173,173,Academic/Research,Economic Development,Yes,-84.38908405,33.77550539
+32,172,172,Academic/Research,Management Building,Yes,-84.38785203,33.77636247
+33,172J,172J,Admin/Services,Barnes & Noble Bookstore,Yes,-84.38847316,33.77639761
+34,60A,060A,Academic/Research,Caddell Arch Annex,Yes,-84.3968525,33.77673116
+36,331,331,Greek Housing,Alpha Chi Omega,Yes,-84.39291823,33.7748991
+37,339,339,Religious Org,Baptist Student Union,Yes,-84.39225151,33.77476991
+38,305,305,Greek Housing,Chi Psi,Yes,-84.39251132,33.77514041
+39,325,325,Greek Housing,Sigma Nu,Yes,-84.39432289,33.77509094
+40,322,322,Greek Housing,Alpha Xi Delta,Yes,-84.39184779,33.77783564
+42,22A,022A,Academic/Research,Daniel Lab Addition,Yes,-84.39406356,33.77363814
+43,333,333,Greek Housing,Alpha Gamma Delta,Yes,-84.39283572,33.77712777
+45,343,343,Religious Org,Lutheran Center,Yes,-84.39312243,33.77669319
+46,336,336,Greek Housing,Pi Kappa Phi,Yes,-84.39430135,33.77666032
+47,318,318,Greek Housing,Phi Kappa Theta,Yes,-84.39389875,33.77666063
+49,362,362,Greek Housing,Phi Mu,Yes,-84.39489205,33.77668569
+50,335,335,Greek Housing,Delta Chi,Yes,-84.39295834,33.77660559
+51,335,335,Greek Housing,Alpha Gamma Delta,Yes,-84.39278638,33.77671249
+52,309,309,Greek Housing,Delta Upsilon,Yes,-84.39231658,33.77665226
+54,327,327,Greek Housing,Tau Kappa Epsilon,Yes,-84.39236949,33.7771624
+55,333,333,Greek Housing,Alpha Gamma Delta,Yes,-84.39302124,33.77714878
+57,76,76,Academic/Research,Architecture East,Yes,-84.39550108,33.77593746
+58,320,320,Greek Housing,Pi Kappa Alpha,Yes,-84.3952621,33.7767084
+59,338,338,Greek Housing,Zeta Tau Alpha,Yes,-84.39335372,33.77716298
+60,326,326,Greek Housing,Sigma Phi Epsilon,Yes,-84.39332802,33.77666395
+61,50,50,Academic/Research,College of Computing,Yes,-84.39737204,33.77735461
+64,171,171,Admin/Services,Georgia Tech Hotel and Conference Center,Yes,-84.38916832,33.77634524
+65,174,174,Parking / Visitor Parking,Technology Square Parking Deck,Yes,-84.38955129,33.77564521
+66,NA,NA,Admin/Services,Storage Building,Yes,-84.4050782,33.7759171
+67,NA,NA,Admin/Services,Storage building,Yes,-84.40500587,33.77601439
+68,31,31,Admin/Services,Moore Student Success Center,Yes,-84.39395682,33.77244208
+70,141B,141B,Parking / Visitor Parking,14th Street Parking Deck,Yes,-84.39531691,33.78520558
+71,185,185,Admin/Services,Strong Street Gatehouse,Yes,-84.40321106,33.77035829
+72,189,189,Admin/Services,NARA Substation Control House,Yes,-84.40293782,33.76940023
+73,163,163,Academic/Research,North Avenue Research Area (NARA),Yes,-84.40608755,33.77180774
+74,149,149,Academic/Research,NARA Structures Lab,Yes,-84.4040969,33.77100121
+75,159,159,Academic/Research,NARA Food Processing Technology Research,Yes,-84.4038106,33.77043557
+76,136,136,Academic/Research,NARA Tech Way Building,Yes,-84.40267903,33.77099055
+78,151,151,Academic/Research,NARA Combustion Laboratory,Yes,-84.40266497,33.77040218
+79,116,116,Residence Halls,Woodruff Residence Hall,Yes,-84.40677223,33.77910112
+80,119,119,Residence Halls,Fitten Residence Hall,Yes,-84.40373415,33.77822614
+81,105,105,Residence Halls,Commander Building,Yes,-84.40392124,33.77888217
+82,131,131,Residence Halls,Hemphill Avenue Apartments,Yes,-84.40327088,33.78010877
+83,110,110,Residence Halls,Folk Residence Hall,Yes,-84.40484094,33.77886482
+85,73,73,Athletic,McCamish Pavilion,Yes,-84.39281162,33.78064558
+86,32,32,Admin/Services,Facilities,Yes,-84.39314058,33.77992028
+87,175,175,Academic/Research,Technology Square Research Building,Yes,-84.39009757,33.7773841
+89,32A,032A,Admin/Services,Facilities,Yes,-84.39274774,33.77997427
+90,73A,073A,Athletic,Luck Building,Yes,-84.3922295,33.78027212
+91,33B,033B,Admin/Services,O'Keefe Custodial Services Building,Yes,-84.39245624,33.77933857
+92,33C,033C,Academic/Research,O'Keefe Storage Facility,Yes,-84.39250732,33.77895314
+93,155,155,Admin/Services,Georgia Tech Research Corporation,Yes,-84.40393638,33.78168285
+94,155B,155B,Admin/Services,Grants and Contracts,Yes,-84.40361392,33.78170302
+95,133A,133A,Admin/Services,10th Street Chiller Plant Addition,Yes,-84.40244732,33.78106241
+96,152,152,Academic/Research,Broadband Institute Residential Laboratory,Yes,-84.40290681,33.78173404
+97,790,790,Academic/Research,Centennial Research Building,Yes,-84.40037172,33.78100366
+99,182,182,Parking / Visitor Parking,Family Housing Deck,Yes,-84.39496869,33.78219953
+100,71,71,Admin/Services,President's House,Yes,-84.39576412,33.78097002
+101,71A,071A,Admin/Services,President's Cottage,Yes,-84.39677334,33.7809936
+102,161,161,Admin/Services,Facilities Waste Storage,Yes,-84.3970182,33.7811105
+103,168,168,Athletic,Russ Chandler Baseball Stadium,Yes,-84.39470161,33.77715524
+105,315,315,Greek Housing,Phi Gamma Delta,Yes,-84.39326685,33.7776323
+106,321,321,Greek Housing,Psi Upsilon,Yes,-84.39175053,33.77754601
+107,310,310,Greek Housing,Kappa Alpha,Yes,-84.39175577,33.77652118
+108,148,148,Parking / Visitor Parking,North Campus Parking Deck,Yes,-84.39845435,33.78022205
+109,67A,067A,Admin/Services,Facilities Operations Storage,Yes,-84.39713864,33.78089082
+110,83C,083C,Admin/Services,Machine Shop,Yes,-84.39673665,33.78073696
+111,83C,083C,Admin/Services,Landscape Offices,Yes,-84.39692166,33.78078333
+113,67,67,Admin/Services,Facilities Garage/Warehouse,Yes,-84.39755388,33.78064134
+114,81,81,Academic/Research,Howey Building,Yes,-84.39867768,33.77743977
+115,111A,111A,Academic/Research,Mason Building,Yes,-84.39886154,33.77674199
+116,85,85,Academic/Research,Van Leer Building,Yes,-84.39713936,33.77584434
+117,99,99,Academic/Research,Baker Building,Yes,-84.39950153,33.78001955
+120,132S,132S,Residence Halls,Center Street Apts - S,Yes,-84.40172996,33.77980707
+121,132N,132N,Residence Halls,Center Street Apts - N,Yes,-84.40238113,33.78032061
+122,125,125,Admin/Services,Southern Regional Education Board,Yes,-84.40657092,33.78114172
+123,129,129,Academic/Research,Institute of Paper Science and Technology,Yes,-84.40457389,33.78099966
+124,139,139,Parking / Visitor Parking,Curran Street Parking Deck,Yes,-84.40553276,33.77921352
+125,84,84,Academic/Research,"Weber Space, Science & Technology",Yes,-84.39662266,33.7729
+126,98,98,Academic/Research,"Weber Space, Science & Technology",Yes,-84.39629363,33.77267786
+127,101,101,Academic/Research,Montgomery Knight Aerospace Engineering,Yes,-84.39610949,33.77190053
+128,38,38,Academic/Research,Savant Building,Yes,-84.39526672,33.77208748
+129,30,30,Admin/Services,French Building,Yes,-84.39455111,33.77293713
+130,26,26,Admin/Services,Holland Building,Yes,-84.39459034,33.77331898
+132,36,36,Admin/Services,Carnegie Building,Yes,-84.39427945,33.77249083
+133,74,74,Admin/Services,Bradley Building,Yes,-84.39447337,33.77259654
+134,35,35,Admin/Services,Lettie Pate Whithead Evans Administration,Yes,-84.39467264,33.77249718
+135,64,64,Residence Halls,Undergraduate Living Center,Yes,-84.40586184,33.778141
+136,115,115,Academic/Research,Couch Building,Yes,-84.40445727,33.77820666
+137,118,118,Residence Halls,Montag Residence Hall,Yes,-84.40391084,33.77786305
+138,117,117,Residence Halls,Freeman Residence Hall,Yes,-84.40392185,33.77751801
+139,65,65,Residence Halls,Sixth Street Apartments,Yes,-84.40508221,33.77750845
+140,65A,065A,Residence Halls,Maulding Residence Hall,Yes,-84.40573494,33.7769857
+141,156,156,Admin/Services,OIT Planning and Programming,Yes,-84.40643462,33.7759255
+142,162,162,Parking / Visitor Parking,Campus Recreation Parking Deck,Yes,-84.40391114,33.7761905
+143,140,140,Athletic,Aquatics Center,Yes,-84.40418924,33.77567123
+144,160,160,Athletic,Campus Recreation Center,Yes,-84.40336584,33.77546411
+145,126,126,Academic/Research,Manufacturing Research Center,Yes,-84.40134279,33.77759751
+146,144,144,Academic/Research,Love / MRDC II,Yes,-84.40177484,33.77659032
+147,57,57,Academic/Research,ISYE Annex,Yes,-84.40187117,33.77524811
+148,55,55,Academic/Research,Instructional Center,Yes,-84.40132934,33.77540209
+149,56,56,Academic/Research,Groseclose Building,Yes,-84.40189343,33.7756722
+150,135,135,Academic/Research,MRDC,Yes,-84.40058318,33.77697566
+151,103A,103A,Academic/Research,Boggs Storage Facility,Yes,-84.39946397,33.77592296
+152,124,124,Admin/Services,Ferst Center for the Arts,Yes,-84.39921398,33.77514315
+153,103,103,Academic/Research,Boggs Chemistry,Yes,-84.39981368,33.77547068
+154,138,138,Admin/Services,Printing and Copying Services,Yes,-84.40546887,33.77475883
+155,184,184,Admin/Services,831 Marieta St NW,Yes,-84.40588062,33.77527538
+157,177,177,Admin/Services,Whitehead Student Health Center,Yes,-84.40311016,33.77482298
+158,142,142,Admin/Services,Human Resources,Yes,-84.40263285,33.77336837
+159,123,123,Admin/Services,Smithgall Student Services Building,Yes,-84.39954256,33.77433496
+161,40,40,Academic/Research,Guggenheim Building,Yes,-84.39578336,33.77162695
+162,41,41,Academic/Research,Engineering Science and Mechanics Building,Yes,-84.39579691,33.7720472
+163,39,39,Academic/Research,Swann Building,Yes,-84.3952785,33.77168779
+164,45,45,Academic/Research,Coon Building,Yes,-84.39587071,33.77272518
+165,25,25,Academic/Research,Chapin Building,Yes,-84.395157,33.77332441
+166,24,24,Academic/Research,D.M. Smith Building,Yes,-84.39515906,33.77364544
+167,23A,023A,Academic/Research,Army Office,Yes,-84.39450513,33.77377875
+169,51A,051A,Academic/Research,Thomas Hinman building,Yes,-84.39491372,33.77479923
+170,51E,051E,Admin/Services,Calculator Addition,Yes,-84.39473983,33.77491578
+171,51F,051F,Academic/Research,Rich Chiller Plant,Yes,-84.39506399,33.77490469
+172,51B,051B,Admin/Services,Calculator,Yes,-84.39480018,33.77501633
+173,51C,051C,Admin/Services,Old Rich Building,Yes,-84.39508418,33.77502963
+174,51D,051D,Admin/Services,Rich Computer Center,Yes,-84.39500092,33.77525842
+175,104,104,Admin/Services,Wenn Student Center,Yes,-84.39881914,33.77417557
+176,59,59,Academic/Research,Stephen Hall Building,Yes,-84.39409055,33.77412831
+177,29A,029A,Admin/Services,Lyman Hall,Yes,-84.39412287,33.77304246
+178,29C,029C,Admin/Services,Lyman Hall/Emerson Addition,Yes,-84.39399755,33.77305124
+179,29B,029B,Admin/Services,Emerson Building,Yes,-84.39388877,33.77305185
+180,14,14,Residence Halls,Harrison Residence Hall,Yes,-84.39100833,33.77277067
+181,16,16,Residence Halls,Glenn Residence Hall,Yes,-84.39155313,33.77343475
+182,15,15,Residence Halls,Towers Residence Hall,Yes,-84.39105744,33.77343013
+183,92,92,Residence Halls,Perry Residence Hall,Yes,-84.39105153,33.77452817
+184,94,94,Residence Halls,Hopkins Residence Hall,Yes,-84.39129645,33.77405373
+185,93,93,Residence Halls,Hanson Residence Hall,Yes,-84.39093676,33.77415092
+186,91,91,Residence Halls,Matheson Residence Hall,Yes,-84.39157243,33.77453103
+187,90,90,Residence Halls,Floyd Field Residence Hall,Yes,-84.3916508,33.77416678
+188,3,3,Admin/Services,L. W. Robert Alumni House,Yes,-84.3935016,33.77101301
+189,9,9,Parking / Visitor Parking,Burge Parking Deck,Yes,-84.39394016,33.770981
+190,7,7,Residence Halls,Brown Residence Hall,Yes,-84.39182123,33.77168797
+191,6,6,Residence Halls,Smith Residence Hall,Yes,-84.3913503,33.77169044
+192,10,10,Residence Halls,Clarke Howell Residence Hall,Yes,-84.39101826,33.77213501
+193,13,13,Residence Halls,Cloudman Residence Hall,Yes,-84.39170847,33.77282735
+194,145,145,Academic/Research,Allen Building,Yes,-84.39880889,33.77616044
+195,137,137,Academic/Research,Habersham,Yes,-84.40440037,33.77403404
+196,165,165,Academic/Research,Whitaker Building,Yes,-84.39683022,33.77848277
+197,33,33,Academic/Research,O'Keefe Main Building,Yes,-84.39215749,33.77880096
+198,196,196,Athletic,Softball Stadium,Yes,-84.39321618,33.77927937
+200,196A,196A,Athletic,Softball Ticketing Office,Yes,-84.39271196,33.77928382
+201,141,141,Academic/Research,Georgia Tech Research Institute,Yes,-84.3949166,33.78574923
+202,147,147,Academic/Research,Ford ES&T,Yes,-84.39597629,33.77890661
+203,146,146,Academic/Research,Petit Biotechnology Building,Yes,-84.39726852,33.778995
+204,181,181,Academic/Research,Nanotechnology Building,Yes,-84.39864001,33.77888899
+205,22,22,Academic/Research,Daniel Laboratory,Yes,-84.39400135,33.77369959
+206,18,18,Athletic,Edge Intercollegiate Athletic Center,Yes,-84.39225134,33.7733876
+207,18A,018A,Athletic,Rice Center for Sports Performance,Yes,-84.39248549,33.77337198
+208,17,17,Athletic,Bobby Dodd Stadium,Yes,-84.39353332,33.77260302
+210,166,166,Academic/Research,Clough Building,Yes,-84.39640014,33.77463589
+211,198,198,Admin/Services,Academy of Medicine,Yes,-84.38666591,33.77835001
+212,11,11,Residence Halls,Harris Residence Hall,Yes,-84.39180384,33.77207887
+213,54,54,Parking / Visitor Parking,Student Center Parking Deck,Yes,-84.40053554,33.77421862
+216,52,52,Residence Halls,Graduate Living Center,Yes,-84.39636181,33.78201063
+217,109,109,Residence Halls,Caldwell Residence Hall,Yes,-84.40441276,33.77885998
+218,86,86,Academic/Research,Bunger-Henry Building,Yes,-84.3982159,33.77564267
+219,111,111,Academic/Research,Mason Building,Yes,-84.39839409,33.7765741
+220,164,164,Admin/Services,Central Receiving,Yes,-84.40145526,33.77289163
+221,179,179,Academic/Research,830 W Peachtree St,Yes,-84.38772176,33.7774152
+222,178,178,Academic/Research,Parking Office,Yes,-84.3876475,33.77706254
+223,167,167,Academic/Research,Molecular Science & Engineering,Yes,-84.39669446,33.77986899
+226,108,108,Residence Halls,Armstrong Residence Hall,Yes,-84.40358336,33.77909584
+227,107,107,Residence Halls,Hefner Residence Hall,Yes,-84.40394441,33.77909899
+229,2,2,Academic/Research,Skiles,Yes,-84.39594057,33.77359501
+230,33A,033A,Athletic,O'Keefe Gym,Yes,-84.39161894,33.7794098
+232,8,8,Parking / Visitor Parking,Peters Parking Deck,Yes,-84.39357182,33.7750147
+233,132G,132G,Residence Halls,Center Street Apts - G,Yes,-84.40204096,33.78017163
+234,12,12,Dining Hall,Brittain Dining Hall,Yes,-84.3913139,33.77243958
+235,114A,114A,Admin/Services,Stamps Addition,Yes,-84.39780956,33.77356887
+236,104A,104A,Admin/Services,Post Office,Yes,-84.39858474,33.77374062
+237,114,114,Admin/Services,Stamps Student Center Commons,Yes,-84.39820078,33.77366931
+238,58,58,Academic/Research,Old Civil Engineering Building,Yes,-84.39461469,33.77423975
+240,51,51,Academic/Research,Hinman Highbay,Yes,-84.39510391,33.77465782
+241,100,100,Academic/Research,Crosland Tower,Yes,-84.39516449,33.77421287
+242,NA,NA,NA,NA,Yes,-84.3951193,33.7743958
+243,66,66,Academic/Research,Cherry Emerson,Yes,-84.39720651,33.77796177
+244,153,153,Academic/Research,Klaus Building,Yes,-84.39620239,33.77715621
+245,720,720,Academic/Research,Heffernan House,Yes,-84.39263714,33.77666742
+246,61A,061A,Academic/Research,430 10th Street (GTRI)  South,Yes,-84.40143584,33.78033447
+247,61,61,Academic/Research,430 10th Street (GTRI) North,Yes,-84.40143394,33.78100737
+248,133,133,Admin/Services,10th Street Chiller Plant,Yes,-84.40236948,33.78082589
+249,77,77,Academic/Research,Gilbert Memorial Library,Yes,-84.39571204,33.7742961
+250,176,176,Academic/Research,Centergy One,Yes,-84.38929735,33.77757017
+251,176A,176A,Academic/Research,GT at Centergy One,Yes,-84.38910605,33.77719316
+253,791,791,Admin/Services,Day Care,Yes,-84.40039488,33.78243022
+254,106,106,Residence Halls,Fulmer Residence Hall,Yes,-84.40388281,33.77862999
+255,73B,073B,Athletic,Zelnak Basketball Addition,Yes,-84.39228052,33.77987536
+256,130,130,Residence Halls,Eighth Street Apts,Yes,-84.4043996,33.78015692
+257,191,191,Residence Halls,North Ave Apts,Yes,-84.39101202,33.77005062
+258,347,347,Athetic,Rose Bowl Field,Yes,-84.39416491,33.77880827
+260,180,180,Residence Halls,Family Housing Apts,Yes,-84.39616364,33.78271056
+261,134,134,Residence Halls,Fourth St Apts - Stein House,Yes,-84.39158514,33.77487335
+262,203,203,Athletic,Ken Byers Tennis Complex,Yes,-84.39427896,33.78108671
+264,200,200,Athletic,Indoor Football Practice,Yes,-84.39494171,33.77865411
+266,199,199,Academic/Research,CNES,Yes,-84.40184676,33.77093985
+267,195,195,Academic/Research,Krone EBB,Yes,-84.39839096,33.78080358
+268,367,367,Athletic,Challenge Course,Yes,-84.40223085,33.77835692
+269,190,190,Parking Deck,North Ave Apts South Parking Deck,Yes,-84.3913796,33.76868496
+270,16A,016A,Residence Halls,GT Connector,Yes,-84.39128496,33.77370391
+271,23B,023B,Academic/Research,Army Armory,Yes,-84.39444328,33.7734739
+272,361,361,Greek Housing,Alpha Phi,Yes,-84.39268722,33.77411447
+273,209,209,Dining Hall,West Village Dining,Yes,-84.40487292,33.77929335
+275,210,210,Admin/Services,Kandeda Building,Yes,-84.39951967,33.7787625
+276,211,211,Admin/Services,Campus Safety,Yes,-84.40331782,33.78120239
+278,207,207,Academic/Research,CODA,Yes,-84.38767929,33.7755079
+280,882,882,Admin/Services,818 Joseph E Lowery Blvd 30318,Yes,-84.41789214,33.77625159
+281,319,319,Greek Housing,Phi Sigma Kappa,Yes,-84.39186841,33.77715172
+282,187,187,Admin/Services,"Environmental Science, Health & Safety",Yes,-84.40475065,33.77441554
+283,186,186,Admin/Services,Capital Assets Accounting Staging,Yes,-84.40352261,33.77361918
+284,158,158,Academic,Digital Fabrication Lab / GTRI Machine Shop,Yes,-84.40155081,33.77166078
+285,158A,158A,Academic,Digital Fabrication Lab / GTRI Machine Shop,Yes,-84.40190267,33.77175868
+286,204,204,Academic/Research,Dalney Building,Yes,-84.40045636,33.77969235
+287,205,205,Parking,Dalney Parking Deck,Yes,-84.40045197,33.78008811
+288,NA,NA,NA,NA,Yes,-84.40205834,33.78094107
+289,NA,NA,NA,NA,Yes,-84.40206422,33.78079759
+290,NA,NA,NA,NA,Yes,-84.40206249,33.78068784
+291,NA,NA,NA,NA,Yes,-84.40205599,33.7811089
+292,780,780,Academic/Research,TEP Bullet,Yes,-84.39986919,33.76949808
+293,785,785,Academic/Research,Technology Enterprise Park #1,Yes,-84.40241667,33.76975072
+294,NA,NA,Greek Housing,NA,Yes,-84.3928069,33.77613988
+295,217,217,Admin/Services,Exhibition Hall,Yes,-84.4016404,33.77463725
+296,216,216,Admin/Services,Pavilion,Yes,-84.40075288,33.77479912
+298,215,215,Admin/Services,Cafe,Yes,-84.40053227,33.77509469
