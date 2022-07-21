@@ -77,7 +77,7 @@ if __name__ == "__main__":
                                                                     minimum_section_contact_days,
                                                                     weeks_in_semester,
                                                                     preference_objective_tollerance=0.01,
-                                                                    contact_hours_objective_tollerance=1)
+                                                                    contact_hours_objective_tollerance=0.1)
     model = assign_opt.construct_model()
     model.update()
     model.printStats()
