@@ -584,7 +584,14 @@ def get_contact_hours_helper(capacity,
         #         contact_days_per_week = weekly_meeting_days - limited_weekly_meeting_days + 1
         #         contact_hours = meeting_hours * contact_days_per_week
         #         return contact_hours, "hybrid_split"
-        contact_hours = floor( (weekly_meeting_days * capacity) / enrollment)
+        contact_days_per_week = floor( (weekly_meeting_days * capacity) / enrollment)
+        # if contact_days_per_week > 1:
+        #     print(weekly_meeting_days)
+        #     print(capacity)
+        #     print(avg_contact_days_per_week)
+        #     print(contact_hours)
+        #     print('')
+        contact_hours = meeting_hours * contact_days_per_week
         return contact_hours, "hybrid_split"
     elif enrollment <= weeks_in_semester * weekly_meeting_days * capacity / minimum_section_contact_days:
         avg_contact_days_per_week = floor(weeks_in_semester * weekly_meeting_days * capacity / enrollment) / weeks_in_semester
