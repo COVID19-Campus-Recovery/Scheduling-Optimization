@@ -151,13 +151,13 @@ class RoomAssignmentOpt(GenericScheduleOpt):
         output["Room"] = output[1].str.extract(r'[^_]*_(.*)')
         output.rename(columns={0: 'subject_course_section_occurrence', 1: 'bldg_room'}, inplace=True)
 
-
+        course_data = course_data.assign(initial_bldg_room=course_data.building_number + '_' + course_data.room)
         final_output = pd.merge(course_data, output, how='left', left_on=["subject_course_section_occurrence"],
                                 right_on=["subject_course_section_occurrence"])
         final_output = pd.merge(final_output, room_data, how="left", left_on="bldg_room", right_on="bldg_room")
         final_output = self.get_additional_output_columns(final_output)
         final_output.rename(columns={"use": 'Room Use'}, inplace=True)
-        columns_to_keep = self.informative_output_columns + ["enrollment", "capacity", "days", "begin_time", "end_time", "exclusively_online", "Room Use"]
+        columns_to_keep = self.informative_output_columns + ["enrollment", "capacity", "days", "begin_time", "end_time", "exclusively_online", "Room Use", 'initial_bldg_room']
         final_output = final_output[columns_to_keep]
         final_output.to_csv(output_path, index=False)
 
