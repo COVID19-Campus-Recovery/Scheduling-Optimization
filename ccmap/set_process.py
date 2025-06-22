@@ -529,7 +529,6 @@ def get_contact_hours(all_section,
         total_contact_hours_section_room_dict - dict{str: str}: maps a section and room to the contact hours the section would have, if it were assigned to the given room
         delivery_mode_section_room_dict - dict{str: str}: maps a section and room to the delivery mode that the section must take, it's to be taught in that room
     """
-
     total_contact_hours_section_room_dict = dict()
     delivery_mode_section_room_dict = dict()
     for section in all_section:
@@ -580,11 +579,9 @@ def get_contact_hours_helper(capacity,
         else:
             return meeting_hours * (weekly_meeting_days - 1), "residential_spread"
     elif enrollment <= weekly_meeting_days * capacity:
-        for limited_weekly_meeting_days in range(2, weekly_meeting_days + 1):
-            if enrollment <= limited_weekly_meeting_days * capacity:
-                contact_days_per_week = weekly_meeting_days - limited_weekly_meeting_days + 1
-                contact_hours = meeting_hours * contact_days_per_week
-                return contact_hours, "hybrid_split"
+        contact_days_per_week = floor( (weekly_meeting_days * capacity) / enrollment)
+        contact_hours = meeting_hours * contact_days_per_week
+        return contact_hours, "hybrid_split"
     elif enrollment <= weeks_in_semester * weekly_meeting_days * capacity / minimum_section_contact_days:
         avg_contact_days_per_week = floor(weeks_in_semester * weekly_meeting_days * capacity / enrollment) / weeks_in_semester
         contact_hours = meeting_hours * avg_contact_days_per_week
